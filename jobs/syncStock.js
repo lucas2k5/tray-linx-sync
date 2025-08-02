@@ -1,23 +1,24 @@
 const { fetchStockFromLinx } = require('../services/linxService');
-const { updateStock } = require('../services/trayService');
+const { getTrayToken, getTrayProduct, updateTrayStock } = require('../services/trayService');
 
-const TRAY_ACCESS_TOKEN = 'SEU_ACCESS_TOKEN_FIXO';
+module.exports = async function syncStock() {
+  console.log('🚀 Iniciando sincronização de estoque...');
+  
+  const trayToken = await getTrayToken();
+  const produtosLinx = await fetchStockFromLinx();
 
-async function syncStock() {
-  console.log('🔁 Iniciando sincronização de estoque...');
-  const estoque = await fetchStockFromLinx();
+  const primeiros10 = produtosLinx.slice(0, 10);
 
-  for (const item of estoque) {
-    try {
-      await updateStock(item.sku, item.quantity, TRAY_ACCESS_TOKEN);
-      console.log(`✅ Produto ${item.sku} atualizado com ${item.quantity} unidades.`);
-    } catch (err) {
-      console.error(`❌ Erro ao atualizar produto ${item.sku}`, err.message);
+  for (const produto of primeiros10) {
+    const produtoTray = await getTrayProduct(produto.trayProductId, trayToken);
+
+    if (produtoTray && produtoTray.Product?.id) {
+      const trayId = produtoTray.Product.id;
+      await updateTrayStock(trayId, produto.stock, trayToken);
+    } else {
+      console.warn(`⚠️ Produto com CodigoItemParcial ${produto.trayProductId} não encontrado na Tray.`);
     }
   }
 
   console.log('✅ Sincronização concluída.');
-}
-
-module.exports = syncStock;
-
+};
