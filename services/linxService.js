@@ -1,6 +1,6 @@
-const axios = require('axios');
+import axios from 'axios';
 
-async function fetchStockFromLinx() {
+export async function fetchStockFromLinx() {
   const response = await axios.post(
     'https://auto-gwsmartapi.linx.com.br/api-e-commerce-premium/ConsultaPecaGerencial',
     {
@@ -58,20 +58,16 @@ async function fetchStockFromLinx() {
         'Cache-Control': 'no-cache',
         'Ocp-Apim-Subscription-Key': 'e0b8910e002b4c7e9cd2ebfa2b9e7697',
         Ambiente: '02431719000102-BARAO-PRODUCAO',
-        Authorization: '',
+        Authorization: '', // você pode adicionar token se necessário
       },
     }
   );
 
   // Retorno mapeado com base no que você informou
   const mapped = response.data.map((item) => ({
-    trayProductId: item.CodigoItemParcial || '',        // usaremos no GET na Tray
-    stock: item.QuantidadeDisponivel || 0               // novo estoque
+    trayProductId: item.CodigoItemParcial || '', // usaremos no GET na Tray
+    stock: item.QuantidadeDisponivel || 0        // novo estoque
   }));
 
   return mapped;
 }
-
-module.exports = {
-  fetchStockFromLinx,
-};
