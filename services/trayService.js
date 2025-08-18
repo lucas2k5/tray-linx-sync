@@ -10,7 +10,6 @@ export async function getTrayToken() {
     const expires = new Date(tokenData.date_expiration_access_token);
     const now = new Date();
     const hoursToExpire = (expires - now) / (1000 * 60 * 60);
-
     if (hoursToExpire > 24) return tokenData.access_token;
   }
 
@@ -37,16 +36,18 @@ export async function getTrayProductByReference(reference, token) {
     );
 
     if (response.data.Products && response.data.Products.length > 0) {
-      return response.data.Products[0];
+      const product = response.data.Products[0].Product;
+      return {
+        id: product.id,
+        reference: product.reference,
+        stock: parseInt(product.stock || 0)
+      };
     }
 
-    console.warn(`⚠️ Nenhum produto encontrado na Tray com reference ${reference}`);
     return null;
   } catch (err) {
     console.error(`❌ Erro ao buscar produto com reference ${reference}:`, err.message);
-    if (err.response) {
-      console.error('📦 Response da API:', err.response.data);
-    }
+    if (err.response) console.error('📦 Response da API:', err.response.data);
     return null;
   }
 }
@@ -59,13 +60,77 @@ export async function updateTrayStock(productId, newStock, token) {
       { headers: { 'Content-Type': 'application/json' } }
     );
 
-    console.log(`✅ Estoque do produto ${productId} atualizado para ${newStock}`);
-    return response.data;
+    if (response.data && response.data.id) return true;
+    return false;
   } catch (err) {
     console.error(`❌ Erro ao atualizar estoque do produto ${productId}:`, err.message);
-    if (err.response) {
-      console.error('📦 Response da API:', err.response.data);
-    }
-    return null;
+    if (err.response) console.error('📦 Response da API:', err.response.data);
+    return false;
   }
+}
+
+export async function updateTrayProductsBatch(products) {
+  const token = await getTrayToken();
+
+  let encontrados = 0;
+  let naoEncontrados = 0;
+  let semReferencia = 0;
+  let errosAtualizacao = 0;
+
+  const resumoProdutos = [];
+
+  for (let i = 0; i < products.length; i += 10) {
+    const batch = products.slice(i, i + 10);
+    console.log(`\n🔹 Processando lote ${i / 10 + 1} de ${Math.ceil(products.length / 10)} (até 10 produtos)`);
+
+    for (const item of batch) {
+      const trayReference = item.ItemEstoque;
+      const newStock = item.CodigoEstoque || 0;
+
+      if (!trayReference) {
+        console.warn(`❌ Produto sem referência válida, estoque: ${newStock}`);
+        semReferencia++;
+        continue;
+      }
+
+      const product = await getTrayProductByReference(trayReference, token);
+
+      if (!product) {
+        console.warn(`⚠️ Produto não encontrado na Tray | Reference Linx: ${trayReference} | Estoque: ${newStock}`);
+        naoEncontrados++;
+        resumoProdutos.push({
+          reference: trayReference,
+          idTray: null,
+          oldStock: null,
+          newStock,
+          status: 'Não encontrado'
+        });
+        continue;
+      }
+
+      const updated = await updateTrayStock(product.id, newStock, token);
+
+      resumoProdutos.push({
+        reference: trayReference,
+        idTray: product.id,
+        oldStock: product.stock,
+        newStock,
+        status: updated ? 'Atualizado' : 'Erro ao atualizar'
+      });
+
+      if (updated) encontrados++;
+      else errosAtualizacao++;
+    }
+  }
+
+  console.log(`\n📊 Resumo detalhado por produto:`);
+  resumoProdutos.forEach(p => {
+    console.log(`${p.status} | Reference Linx: ${p.reference} | ID Tray: ${p.idTray} | Estoque antigo: ${p.oldStock} | Novo estoque: ${p.newStock}`);
+  });
+
+  console.log(`\n📊 Estatísticas finais:`);
+  console.log(`✅ Produtos encontrados e atualizados: ${encontrados}`);
+  console.log(`⚠️ Produtos não encontrados: ${naoEncontrados}`);
+  console.log(`❌ Produtos sem referência: ${semReferencia}`);
+  console.log(`❌ Produtos com erro ao atualizar: ${errosAtualizacao}`);
 }
