@@ -4,6 +4,7 @@ import path from 'path';   // Biblioteca para manipulação de caminhos de arqui
 
 // Caminho absoluto onde será salvo o token da Tray em disco
 const TOKEN_PATH = path.resolve('./tray-token.json');
+const TRAY_STORE_BASE_URL = process.env.TRAY_STORE_URL || 'https://www.partsbarao.com.br';
 
 // 🔹 Recupera token da Tray (busca em arquivo ou gera novo se necessário)
 export async function getTrayToken() {
@@ -30,7 +31,7 @@ export async function getTrayToken() {
 
   // Faz requisição para gerar o token
   const response = await axios.post(
-    'https://www.partsbarao.com.br/web_api/auth',
+    `${TRAY_STORE_BASE_URL}/web_api/auth`,
     payload.toString(),
     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   );
@@ -40,6 +41,22 @@ export async function getTrayToken() {
 
   // Retorna o access_token para uso nas próximas chamadas
   return response.data.access_token;
+}
+
+// 🔹 Busca detalhes completos do pedido na Tray
+export async function getTrayOrderDetails(orderId, token) {
+  try {
+    const response = await axios.get(
+      `${TRAY_STORE_BASE_URL}/web_api/orders/${orderId}`,
+      { params: { access_token: token, complete: 1 } }
+    );
+
+    return response.data;
+  } catch (err) {
+    console.error(`❌ Erro ao buscar detalhes do pedido ${orderId}:`, err.message);
+    if (err.response) console.error('📦 Response da API:', err.response.data);
+    throw err;
+  }
 }
 
 // 🔹 Busca produto na Tray usando a "reference" (CódigoItemParcial da Linx)

@@ -36,21 +36,6 @@ export async function fetchStockFromLinx() {
           PercentualSobrePrecoGarantia: 0,
           DescricaoPoliticaPreco: ''
         },
-        CodigoDepartamento: 0,
-        DataProcessamento: "",
-        ListaIdProdutosFraga: [],
-        FiltroCatalogo: {
-          Pesquisa: "",
-          Segmento: "",
-          Montadora: "",
-          Ano: "",
-          Modelo: "",
-          Versao: "",
-          SistemaId: "",
-          FraMarcaId: [],
-          FragaIdProduto: "",
-          Placa: ""
-        },
         CodigoReferenciaFabrica: ""
       },
       {

@@ -1,11 +1,11 @@
 {
   "code": 201,
   "message": "Created tokens",
-  "access_token": "APP_ID-6665-STORE_ID-1255499-4efa81bfbdc67e65824c2fd5f797919e1cce2ec711eacac5040ae3eba75ca937",
-  "refresh_token": "bed1b49adff6843c98126d30c3ef1786cbdd5ca618eb2ad73ccd50ae5baeb3c0",
-  "date_expiration_access_token": "2025-08-20 21:33:02",
-  "date_expiration_refresh_token": "2025-09-19 18:33:02",
-  "date_activated": "2025-08-20 18:33:02",
+  "access_token": "APP_ID-6665-STORE_ID-1255499-eabcd7290bf7359d4ff5ef23330984acbdb4298880028e0bc965d5f4071bdb1c",
+  "refresh_token": "1bc58cfffa0cf1ffd4221f076a362f74ae36843cb55d293faef7155fd031fd4d",
+  "date_expiration_access_token": "2026-02-23 23:07:33",
+  "date_expiration_refresh_token": "2026-03-25 20:07:33",
+  "date_activated": "2026-02-23 20:07:33",
   "api_host": "https://www.partsbarao.com.br/web_api",
   "store_id": "1255499"
 }
