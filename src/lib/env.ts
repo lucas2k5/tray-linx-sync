@@ -17,6 +17,12 @@ const envSchema = z.object({
   LINX_AMBIENTE: z.string().min(1),
 
   WEBHOOK_SECRET: z.string().optional(),
+
+  // URL de webhook para alertas (Slack, Discord, Make, Zapier…)
+  ALERT_WEBHOOK_URL: z.string().url().optional(),
+
+  // Chave para proteger rotas /admin
+  ADMIN_API_KEY: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

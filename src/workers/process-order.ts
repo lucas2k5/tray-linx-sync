@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { logger } from '../lib/logger.js';
+import { sendFailureAlert } from '../lib/alerts.js';
 import { getTrayToken } from '../services/tray/auth.js';
 import { getTrayOrderComplete } from '../services/tray/orders.js';
 import { sendOrderToLinx } from '../services/linx/orders.js';
@@ -84,7 +85,7 @@ async function processOrder(order: Record<string, unknown>): Promise<void> {
       .eq('scope_id', scopeId);
 
     if (newStatus === 'failed') {
-      log.error('Pedido marcado como FAILED após máximo de tentativas');
+      await sendFailureAlert({ scopeId, attempts: attempts + 1, errorMessage: msg });
     }
   }
 }
