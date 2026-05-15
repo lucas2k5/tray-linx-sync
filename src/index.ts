@@ -37,7 +37,9 @@ cron.schedule('*/5 * * * *', async () => {
 
 serve({ fetch: app.fetch, port: Number(env.PORT) }, (info) => {
   logger.info({ port: info.port }, 'Servidor iniciado');
-  logger.info(`Webhook: POST http://localhost:${info.port}/webhooks/tray/orders`);
-  logger.info(`Health:  GET  http://localhost:${info.port}/health`);
-  logger.info(`Admin:   POST http://localhost:${info.port}/admin/reprocess/:scopeId`);
+  if (env.NODE_ENV !== 'production') {
+    logger.info(`Webhook: POST http://localhost:${info.port}/webhooks/tray/orders`);
+    logger.info(`Health:  GET  http://localhost:${info.port}/health`);
+    logger.info(`Admin:   POST http://localhost:${info.port}/admin/reprocess/:scopeId`);
+  }
 });
