@@ -80,19 +80,26 @@ Worker (polling a cada 30s, até 5 pedidos por ciclo)
     │      Retorna: Order, Customer, CustomerAddresses,
     │               ProductsSold, Payment, OrderInvoice
     │
+    ├─ Verifica Order.status === "FINALIZADO"
+    │      Outros status (aguardando pagamento, cancelado…) → marca skipped, ignora
+    │
     └─ linx/orders.ts · sendOrderToLinx(orderData)
            1. buscarClienteLinx(cpf/cnpj)
                 POST /Geral/ConsultaClientes/ConsultaClientesPaginado
-           2. inserirContato() → obtém Contato ID
+                Se não encontrado → cadastrarClienteSimplificado()
+                POST /Geral/ManutencaoClienteSimplificado/CadastrarClienteSimplificado
+           2. inserirContato(codigoCliente, orderId)
                 POST /Pecas/AtendimentoBalcao/Atendimento/InserirContato
-                ⚠️ Body pendente de validação com Linx
-           3. inserirItem() × N produtos
+                Retorna contatoId (número do atendimento)
+           3. inserirItem(contatoId, item) × N produtos
                 POST /Pecas/AtendimentoBalcao/Atendimento/InserirItem
 ```
 
 **Retry automático:** falha → `status = pending` → reprocessado no próximo ciclo. Após 3 tentativas → `status = failed`.
 
 **Deduplicação:** múltiplos webhooks do mesmo pedido (comuns na Tray) são colapsados pelo `UPSERT ON CONFLICT (scope_id)`.
+
+**Filtro de status:** apenas pedidos com `Order.status = "FINALIZADO"` são enviados à Linx. Os demais ficam com `status = skipped` na fila.
 
 ---
 
@@ -152,7 +159,7 @@ Projeto: `mcqpduxeqqioscmurhac` (região: sa-east-1, São Paulo)
 | Coluna | Tipo | Descrição |
 |---|---|---|
 | `scope_id` | TEXT UNIQUE | ID do pedido na Tray (chave de deduplicação) |
-| `status` | TEXT | `pending` · `processing` · `done` · `failed` |
+| `status` | TEXT | `pending` · `processing` · `done` · `failed` · `skipped` |
 | `attempts` | INTEGER | Número de tentativas realizadas |
 | `max_attempts` | INTEGER | Limite de tentativas (padrão: 3) |
 | `tray_order_data` | JSONB | Resposta completa de `/orders/:id/complete` |
@@ -397,13 +404,56 @@ O token é obtido via `POST /web_api/auth` e persistido na tabela `tray_tokens` 
 
 ---
 
+## Estrutura real da resposta Tray `/orders/:id/complete`
+
+A API retorna tudo aninhado dentro de `Order`. Não há `Customer` ou `ProductsSold` no topo:
+
+```json
+{
+  "Order": {
+    "id": "2627",
+    "status": "FINALIZADO",
+    "Customer": {
+      "cpf": "32362806898",
+      "name": "...",
+      "email": "...",
+      "zip_code": "13140-320",
+      "address": "Avenida José Paulino",
+      "neighborhood": "Santa Cecília",
+      "city": "Paulínia",
+      "state": "SP"
+    },
+    "ProductsSold": [
+      {
+        "ProductsSold": {
+          "reference": "JGM4526S",
+          "quantity": "2",
+          "price": "195.00"
+        }
+      }
+    ]
+  }
+}
+```
+
+Os campos de endereço do cliente vêm **diretamente no objeto `Customer`** (não em `CustomerAddresses` separado).
+
+---
+
 ## Mapeamento de campos
 
 | Campo Linx | Campo Tray | Status |
 |---|---|---|
-| `ItemEstoque` | `reference` (produto) | ✅ Confirmado em teste real |
-| `QuantidadeDisponivel` | `stock` (produto) | ✅ Confirmado em teste real |
-| `CPF`/`CNPJ` do cliente | `Customer.cpf` / `Customer.cnpj` | ✅ Confirmado (pedido 2627) |
+| `ItemEstoque` | `Order.ProductsSold[].ProductsSold.reference` | ✅ Confirmado em teste real |
+| `QuantidadeDisponivel` | `Order.ProductsSold[].ProductsSold.quantity` | ✅ Confirmado em teste real |
+| `CPFCNPJ` do cliente | `Order.Customer.cpf` / `.cnpj` | ✅ Confirmado (pedido 2627) |
+| `Nome` | `Order.Customer.name` | ✅ |
+| `EmailCasa` | `Order.Customer.email` | ✅ |
+| `CEP` | `Order.Customer.zip_code` | ✅ |
+| `Endereco` | `Order.Customer.address` | ✅ |
+| `Bairro` | `Order.Customer.neighborhood` | ✅ |
+| `Cidade` | `Order.Customer.city` | ✅ |
+| `UF` | `Order.Customer.state` | ✅ |
 
 ---
 
@@ -411,9 +461,9 @@ O token é obtido via `POST /web_api/auth` e persistido na tabela `tray_tokens` 
 
 ### Bloqueadoras para fluxo de pedidos
 
-- [ ] **Validar body do `InserirContato`** — payload do endpoint `POST /Pecas/AtendimentoBalcao/Atendimento/InserirContato` precisa ser confirmado com a Linx. O restante do fluxo está implementado em `src/services/linx/orders.ts`
-- [ ] **URL pública para webhooks** — a Tray exige HTTPS externo. Em dev: `ngrok http 3000`. Em produção: URL do Railway após deploy
-- [ ] **Cadastrar webhook no painel Tray** — após ter a URL, registrar `POST /webhooks/tray/orders` como receptor do evento `order`
+- [ ] **Cadastrar webhook no painel Tray** — registrar `POST https://tray-linx-sync-production.up.railway.app/webhooks/tray/orders` como receptor do evento `order`
+- [ ] **Validar resposta do `InserirContato`** — confirmar o nome do campo que retorna o ID do atendimento (`Contato`, `NumeroContato` ou `Id`) com um teste real contra a Linx
+- [ ] **Validar resposta do `CadastrarClienteSimplificado`** — confirmar campo do código de cliente retornado (`Cliente`, `CodigoCliente` ou `Codigo`)
 
 ### Melhorias futuras
 
