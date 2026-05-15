@@ -61,6 +61,18 @@ async function processOrder(order: Record<string, unknown>): Promise<void> {
       .update({ tray_order_data: trayOrderData as unknown as Record<string, unknown> })
       .eq('scope_id', scopeId);
 
+    const orderStatus = (trayOrderData as Record<string, unknown>)?.Order as Record<string, unknown> | undefined;
+    const trayStatus = String(orderStatus?.status ?? '').toUpperCase();
+
+    if (trayStatus !== 'FINALIZADO') {
+      log.info({ trayStatus }, 'Pedido ignorado — status não é FINALIZADO');
+      await supabase
+        .from('order_queue')
+        .update({ status: 'skipped', processed_at: new Date().toISOString() })
+        .eq('scope_id', scopeId);
+      return;
+    }
+
     const linxResponse = await sendOrderToLinx(trayOrderData);
 
     await supabase
