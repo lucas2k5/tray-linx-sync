@@ -1,0 +1,248 @@
+{
+  "info": {
+    "_postman_id": "5eaeff8d-aa80-4876-baf7-4831b1358621",
+    "name": "Linx API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54570204",
+    "_collection_link": "https://go.postman.co/collection/45979643-5eaeff8d-aa80-4876-baf7-4831b1358621?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Busca Produto",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json-patch+json"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          },
+          {
+            "key": "Ocp-Apim-Subscription-Key",
+            "value": "e0b8910e002b4c7e9cd2ebfa2b9e7697"
+          },
+          {
+            "key": "Ambiente",
+            "value": "02431719000102-BARAO-PRODUCAO"
+          },
+          {
+            "key": "Authorization",
+            "value": ""
+          },
+          {
+            "key": "Cookie",
+            "value": "_cf_bm=Uyy5C2jdAOy3aYffT7wLFD0cw4OxWZoFiBdbu.qwQmE-1753793830-1.0.1.1-KFFOItx.mtK2aAXfjS4.K9fy6Zk9UU5t8BiMYvkdMGej6P1CYBrVaCR6iZe16em8D8OGDdloSlsSubJb0NpV_gUJ6yIsjUXAD239xd7F5yc; __cf_bm=L8045q_NwWj6bIr4e0sfyOookEqmRBI2gjzTFCl4zVM-1754163648-1.0.1.1-McMOV_dTYLVgTyQCMIbhuHW.kaLfXhaBFTVGbO0T2ZmydnK.hs4sZ7Su_b_Zr0.ZpCUXNiK32J.ZPdjQyMXw0E36Fibk4iZXVzRNfDJS0I"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ConfiguracaoBase\": {\n        \"Empresa\": 1,\n        \"Revenda\": 1,\n        \"Usuario\": 0,\n        \"CodigoOrigem\": 0,\n        \"IdentificadorOrigem\": \"\",\n        \"ClienteContactado\": false\n    },\n    \"TextoPesquisa\": \"\",\n    \"CodigoItemParcial\": \"\",\n    \"CodigoEanGtin\": \"\",\n    \"DescricaoItemParcial\": \"\",\n    \"UtilizacaoItemParcial\": \"\",\n    \"GruposPecas\": \"\",\n    \"Marcas\": \"\",\n    \"ListaFornecedoresDSH\": \"\",\n    \"TipoPesquisa\": \"I\",\n    \"ClasseFabrica\": \"\",\n    \"TipoTransacao\": \"P21\",\n    \"RetiraPrecoMarkup\": false,\n    \"RecallFCA\": false,\n    \"DisponibilidadeCatalogo\": false,\n    \"Movimentados\": false,\n    \"Consultados\": true,\n    \"SomenteDisponiveis\": true,\n    \"PoliticaPreco\": {\n        \"CodigoPolitica\": 0,\n        \"PercentualSobrePrecoPublico\": 0,\n        \"PercentualSobrePrecoGarantia\": 0,\n        \"DescricaoPoliticaPreco\": \"\"\n    },\n    \"CodigoDepartamento\": 0,\n    \"DataProcessamento\": \"\",\n    \"ListaIdProdutosFraga\": [],\n    \"CodigoReferenciaFabrica\": \"\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://auto-gwsmartapi.linx.com.br//api-e-commerce-premium/ConsultaPecaGerencial",
+          "protocol": "https",
+          "host": [
+            "auto-gwsmartapi",
+            "linx",
+            "com",
+            "br"
+          ],
+          "path": [
+            "",
+            "api-e-commerce-premium",
+            "ConsultaPecaGerencial"
+          ]
+        },
+        "description": "Generated from cURL: curl --location 'https://auto-gwsmartapi.linx.com.br//api-e-commerce-premium/ConsultaPecaGerencial' \\\n--header 'Content-Type: application/json-patch+json' \\\n--header 'Cache-Control: no-cache' \\\n--header 'Ocp-Apim-Subscription-Key: e0b8910e002b4c7e9cd2ebfa2b9e7697' \\\n--header 'Ambiente: 02431719000102-BARAO-PRODUCAO' \\\n--header 'Authorization;' \\\n--header 'Cookie: _cf_bm=Uyy5C2jdAOy3aYffT7wLFD0cw4OxWZoFiBdbu.qwQmE-1753793830-1.0.1.1-KFFOItx.mtK2aAXfjS4.K9fy6Zk9UU5t8BiMYvkdMGej6P1CYBrVaCR6iZe16em8D8OGDdloSlsSubJb0NpV_gUJ6yIsjUXAD239xd7F5yc; __cf_bm=L8045q_NwWj6bIr4e0sfyOookEqmRBI2gjzTFCl4zVM-1754163648-1.0.1.1-McMOV_dTYLVgTyQCMIbhuHW.kaLfXhaBFTVGbO0T2ZmydnK.hs4sZ7Su_b_Zr0.ZpCUXNiK32J.ZPdjQyMXw0E36Fibk4iZXVzRNfDJS0I' \\\n--data '{\"ConfiguracaoBase\": {\n        \"Empresa\": 1,\n        \"Revenda\": 1,\n        \"Usuario\": 0,\n        \"CodigoOrigem\": 0,\n        \"IdentificadorOrigem\": \"\",\n        \"ClienteContactado\": false\n    },\n    \"TextoPesquisa\": \"\",\n    \"CodigoItemParcial\": \"\",\n    \"CodigoEanGtin\": \"\",\n    \"DescricaoItemParcial\": \"\",\n    \"UtilizacaoItemParcial\": \"\",\n    \"GruposPecas\": \"\",\n    \"Marcas\": \"\",\n    \"ListaFornecedoresDSH\": \"\",\n    \"TipoPesquisa\": \"I\",\n    \"ClasseFabrica\": \"\",\n    \"TipoTransacao\": \"P21\",\n    \"RetiraPrecoMarkup\": false,\n    \"RecallFCA\": false,\n    \"DisponibilidadeCatalogo\": false,\n    \"Movimentados\": false,\n    \"Consultados\": true,\n    \"SomenteDisponiveis\": true,\n    \"PoliticaPreco\": {\n        \"CodigoPolitica\": 0,\n        \"PercentualSobrePrecoPublico\": 0,\n        \"PercentualSobrePrecoGarantia\": 0,\n        \"DescricaoPoliticaPreco\": \"\"\n    },\n    \"CodigoDepartamento\": 0,\n    \"DataProcessamento\": \"\",\n    \"ListaIdProdutosFraga\": [],\n    \"FiltroCatalogo\": {\n        \"Pesquisa\": \"\",\n        \"Segmento\": \"\",\n        \"Montadora\": \"\",\n        \"Ano\": \"\",\n        \"Modelo\": \"\",\n        \"Versao\": \"\",\n        \"SistemaId\": \"\",\n        \"FraMarcaId\": [],\n        \"FragaIdProduto\": \"\",\n        \"Placa\": \"\"\n    },\n\n    \"CodigoReferenciaFabrica\": \"\"\n}'"
+      },
+      "response": []
+    },
+    {
+      "name": "Gera o pedido",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json-patch+json"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          },
+          {
+            "key": "Ocp-Apim-Subscription-Key",
+            "value": "e0b8910e002b4c7e9cd2ebfa2b9e7697"
+          },
+          {
+            "key": "Ambiente",
+            "value": "02431719000102-BARAO-PRODUCAO"
+          },
+          {
+            "key": "Authorization",
+            "value": ""
+          },
+          {
+            "key": "Cookie",
+            "value": "_cf_bm=Uyy5C2jdAOy3aYffT7wLFD0cw4OxWZoFiBdbu.qwQmE-1753793830-1.0.1.1-KFFOItx.mtK2aAXfjS4.K9fy6Zk9UU5t8BiMYvkdMGej6P1CYBrVaCR6iZe16em8D8OGDdloSlsSubJb0NpV_gUJ6yIsjUXAD239xd7F5yc; __cf_bm=L8045q_NwWj6bIr4e0sfyOookEqmRBI2gjzTFCl4zVM-1754163648-1.0.1.1-McMOV_dTYLVgTyQCMIbhuHW.kaLfXhaBFTVGbO0T2ZmydnK.hs4sZ7Su_b_Zr0.ZpCUXNiK32J.ZPdjQyMXw0E36Fibk4iZXVzRNfDJS0I"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"ConfiguracaoBase\": {\n        \"Empresa\": 1,\n        \"Revenda\": 1,\n        \"Usuario\": 0,\n        \"CodigoOrigem\": 0,\n        \"IdentificadorOrigem\": \"\",\n        \"ClienteContactado\": false\n    },\n    \"TextoPesquisa\": \"\",\n    \"CodigoItemParcial\": \"\",\n    \"CodigoEanGtin\": \"\",\n    \"DescricaoItemParcial\": \"\",\n    \"UtilizacaoItemParcial\": \"\",\n    \"GruposPecas\": \"\",\n    \"Marcas\": \"\",\n    \"ListaFornecedoresDSH\": \"\",\n    \"TipoPesquisa\": \"I\",\n    \"ClasseFabrica\": \"\",\n    \"TipoTransacao\": \"P21\",\n    \"RetiraPrecoMarkup\": false,\n    \"RecallFCA\": false,\n    \"DisponibilidadeCatalogo\": false,\n    \"Movimentados\": false,\n    \"Consultados\": true,\n    \"SomenteDisponiveis\": true,\n    \"PoliticaPreco\": {\n        \"CodigoPolitica\": 0,\n        \"PercentualSobrePrecoPublico\": 0,\n        \"PercentualSobrePrecoGarantia\": 0,\n        \"DescricaoPoliticaPreco\": \"\"\n    },\n    \"CodigoDepartamento\": 0,\n    \"DataProcessamento\": \"\",\n    \"ListaIdProdutosFraga\": [],\n    \"FiltroCatalogo\": {\n        \"Pesquisa\": \"\",\n        \"Segmento\": \"\",\n        \"Montadora\": \"\",\n        \"Ano\": \"\",\n        \"Modelo\": \"\",\n        \"Versao\": \"\",\n        \"SistemaId\": \"\",\n        \"FraMarcaId\": [],\n        \"FragaIdProduto\": \"\",\n        \"Placa\": \"\"\n    },\n\n    \"CodigoReferenciaFabrica\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://auto-gwsmartapi.linx.com.br/api-e-commerce-premium/Pecas/AtendimentoBalcao/Atendimento/InserirContato",
+          "protocol": "https",
+          "host": [
+            "auto-gwsmartapi",
+            "linx",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api-e-commerce-premium",
+            "Pecas",
+            "AtendimentoBalcao",
+            "Atendimento",
+            "InserirContato"
+          ]
+        },
+        "description": "Generated from cURL: curl --location 'https://auto-gwsmartapi.linx.com.br//api-e-commerce-premium/ConsultaPecaGerencial' \\\n--header 'Content-Type: application/json-patch+json' \\\n--header 'Cache-Control: no-cache' \\\n--header 'Ocp-Apim-Subscription-Key: e0b8910e002b4c7e9cd2ebfa2b9e7697' \\\n--header 'Ambiente: 02431719000102-BARAO-PRODUCAO' \\\n--header 'Authorization;' \\\n--header 'Cookie: _cf_bm=Uyy5C2jdAOy3aYffT7wLFD0cw4OxWZoFiBdbu.qwQmE-1753793830-1.0.1.1-KFFOItx.mtK2aAXfjS4.K9fy6Zk9UU5t8BiMYvkdMGej6P1CYBrVaCR6iZe16em8D8OGDdloSlsSubJb0NpV_gUJ6yIsjUXAD239xd7F5yc; __cf_bm=L8045q_NwWj6bIr4e0sfyOookEqmRBI2gjzTFCl4zVM-1754163648-1.0.1.1-McMOV_dTYLVgTyQCMIbhuHW.kaLfXhaBFTVGbO0T2ZmydnK.hs4sZ7Su_b_Zr0.ZpCUXNiK32J.ZPdjQyMXw0E36Fibk4iZXVzRNfDJS0I' \\\n--data '{\"ConfiguracaoBase\": {\n        \"Empresa\": 1,\n        \"Revenda\": 1,\n        \"Usuario\": 0,\n        \"CodigoOrigem\": 0,\n        \"IdentificadorOrigem\": \"\",\n        \"ClienteContactado\": false\n    },\n    \"TextoPesquisa\": \"\",\n    \"CodigoItemParcial\": \"\",\n    \"CodigoEanGtin\": \"\",\n    \"DescricaoItemParcial\": \"\",\n    \"UtilizacaoItemParcial\": \"\",\n    \"GruposPecas\": \"\",\n    \"Marcas\": \"\",\n    \"ListaFornecedoresDSH\": \"\",\n    \"TipoPesquisa\": \"I\",\n    \"ClasseFabrica\": \"\",\n    \"TipoTransacao\": \"P21\",\n    \"RetiraPrecoMarkup\": false,\n    \"RecallFCA\": false,\n    \"DisponibilidadeCatalogo\": false,\n    \"Movimentados\": false,\n    \"Consultados\": true,\n    \"SomenteDisponiveis\": true,\n    \"PoliticaPreco\": {\n        \"CodigoPolitica\": 0,\n        \"PercentualSobrePrecoPublico\": 0,\n        \"PercentualSobrePrecoGarantia\": 0,\n        \"DescricaoPoliticaPreco\": \"\"\n    },\n    \"CodigoDepartamento\": 0,\n    \"DataProcessamento\": \"\",\n    \"ListaIdProdutosFraga\": [],\n    \"FiltroCatalogo\": {\n        \"Pesquisa\": \"\",\n        \"Segmento\": \"\",\n        \"Montadora\": \"\",\n        \"Ano\": \"\",\n        \"Modelo\": \"\",\n        \"Versao\": \"\",\n        \"SistemaId\": \"\",\n        \"FraMarcaId\": [],\n        \"FragaIdProduto\": \"\",\n        \"Placa\": \"\"\n    },\n\n    \"CodigoReferenciaFabrica\": \"\"\n}'"
+      },
+      "response": []
+    },
+    {
+      "name": "Incluir item no pedido",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json-patch+json"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          },
+          {
+            "key": "Ocp-Apim-Subscription-Key",
+            "value": "e0b8910e002b4c7e9cd2ebfa2b9e7697"
+          },
+          {
+            "key": "Ambiente",
+            "value": "02431719000102-BARAO-PRODUCAO"
+          },
+          {
+            "key": "Authorization",
+            "value": ""
+          },
+          {
+            "key": "Cookie",
+            "value": "_cf_bm=Uyy5C2jdAOy3aYffT7wLFD0cw4OxWZoFiBdbu.qwQmE-1753793830-1.0.1.1-KFFOItx.mtK2aAXfjS4.K9fy6Zk9UU5t8BiMYvkdMGej6P1CYBrVaCR6iZe16em8D8OGDdloSlsSubJb0NpV_gUJ6yIsjUXAD239xd7F5yc; __cf_bm=L8045q_NwWj6bIr4e0sfyOookEqmRBI2gjzTFCl4zVM-1754163648-1.0.1.1-McMOV_dTYLVgTyQCMIbhuHW.kaLfXhaBFTVGbO0T2ZmydnK.hs4sZ7Su_b_Zr0.ZpCUXNiK32J.ZPdjQyMXw0E36Fibk4iZXVzRNfDJS0I"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"dadosDoItem\": {\n        \"ItemEstoque\": 0,\n        \"Quantidade\": 0,\n        \"ValorUnitario\": 0,\n        \"Desconto\": 0,\n        \"DescontoLinxPromo\": 0,\n        \"DescontoUnitarioLinxPromo\": 0,\n        \"ContadorItem\": 0,\n        \"CodigoItemPedidoCompra\": 0,\n        \"OrdemCompraCliente\": \"string\",\n        \"NroSolicitacao\": 0,\n        \"Kit\": 0,\n        \"KitEditavel\": \"string\",\n        \"PermitirItemCoringa\": true,\n        \"ItemCoringa\": \"string\",\n        \"Aprovacao\": 0,\n        \"IndTot\": true,\n        \"Gratuidade\": 0\n    },\n    \"dadosOrigem\": {\n        \"configuracaoOrigem\": {\n            \"Empresa\": 1,\n            \"Revenda\": 1,\n            \"Usuario\": 0,\n            \"CodigoOrigem\": 0,\n            \"IdentificadorOrigem\": \"string\"\n        },\n        \"parametrosSelecao\": {\n            \"Empresa\": 0,\n            \"Revenda\": 0,\n            \"Contato\": 0,\n            \"Solicitacao\": 0,\n            \"OrdemServico\": 0,\n            \"OrdemCompra\": 0,\n            \"CodigoKit\": 0,\n            \"CodigoServico\": 0,\n            \"Pedido\": \"string\",\n            \"Promocao\": 0,\n            \"Cotacao\": 0,\n            \"NumeroNotaFiscal\": 0,\n            \"SerieNotaFiscal\": \"string\",\n            \"TipoTransacao\": \"string\",\n            \"Contador\": 0\n        }\n    },\n    \"detalhesDesconto\": {\n        \"descontoPercentual\": 0,\n        \"descontoPercentualLinxPromo\": 0,\n        \"descontoPercentualTotal\": 0,\n        \"valorTotal\": 0,\n        \"rentabilidadePercentual\": 0,\n        \"custoUnitario\": 0,\n        \"impostos\": {\n            \"Ipi\": {\n                \"Valor\": 0,\n                \"Aliquota\": 0,\n                \"Base\": 0\n            },\n            \"PisCofins\": {\n                \"Valor\": 0,\n                \"Aliquota\": 0,\n                \"Base\": 0\n            },\n            \"IcmsRetido\": {\n                \"Valor\": 0,\n                \"Aliquota\": 0,\n                \"Base\": 0\n            },\n            \"Icms\": {\n                \"Valor\": 0,\n                \"Aliquota\": 0,\n                \"Base\": 0\n            },\n            \"ValorIcmsComoDesconto\": 0,\n            \"ValorIcmsOperacaoPropria\": 0,\n            \"ValorImpostoGlobal\": 0,\n            \"criterioBaseIPI\": 0\n        },\n        \"Mensagem\": \"string\",\n        \"FuncaoAprovacao\": 0,\n        \"UsuarioAprovador\": 0,\n        \"LinxPromoOpcao\": {\n            \"Sugestoes\": [{\n                \"Sugestao\": \"string\"\n            }],\n            \"Opcoes\": [{\n                \"Opcao\": 0,\n                \"DescontoTotal\": 0,\n                \"DescontoUnitario\": 0,\n                \"PercentualDesconto\": 0,\n                \"Mensagem\": \"string\",\n                \"Sequencia\": 0,\n                \"MapVersion\": \"string\",\n                \"QuantidadeSolicitada\": 0,\n                \"ValUnitario\": 0,\n                \"IdLog\": 0,\n                \"Beneficios\": [{\n                    \"Promocao\": \"string\",\n                    \"TipoBeneficio\": \"string\",\n                    \"Mensagem\": \"string\",\n                    \"Beneficio\": \"string\",\n                    \"Quantidade\": 0,\n                    \"Percentual\": 0,\n                    \"Valor\": 0,\n                    \"Sequencia\": 0\n                }]\n            }],\n            \"OpcaoSelecionada\": {\n                \"Opcao\": 0,\n                \"DescontoTotal\": 0,\n                \"DescontoUnitario\": 0,\n                \"PercentualDesconto\": 0,\n                \"Mensagem\": \"string\",\n                \"Sequencia\": 0,\n                \"MapVersion\": \"string\",\n                \"QuantidadeSolicitada\": 0,\n                \"ValUnitario\": 0,\n                \"IdLog\": 0,\n                \"Beneficios\": [{\n                    \"Promocao\": \"string\",\n                    \"TipoBeneficio\": \"string\",\n                    \"Mensagem\": \"string\",\n                    \"Beneficio\": \"string\",\n                    \"Quantidade\": 0,\n                    \"Percentual\": 0,\n                    \"Valor\": 0,\n                    \"Sequencia\": 0\n                }]\n            },\n            \"OpcaoSelecionadaAtendimento\": 0\n        }\n    },\n    \"exibirDescontoEValor\": true,\n    \"exibeRentabilidade\": true,\n    \"permiteEditarValorDesconto\": true,\n    \"exibirOrdemDeCompra\": true,\n    \"ExibirValores\": true,\n    \"HabilitaQuantidade\": true,\n    \"valorizacao\": \"string\",\n    \"contato\": 0,\n    \"PoliticaDePreco\": 0,\n    \"QuantidadeInteira\": true,\n    \"ValorUnitarioInicial\": 0,\n    \"Mecanico\": 0,\n    \"MensagemDialog\": \"string\",\n    \"ItemNotaEntrada\": {\n        \"QuantidadeUtilizada\": 0,\n        \"EncontrouNotaEntrada\": true,\n        \"ValorTotalItem\": 0,\n        \"Empresa\": 0,\n        \"Revenda\": 0,\n        \"ItemEstoque\": 0,\n        \"ItemEstoquePublico\": \"string\",\n        \"DataHoraEntradaSaida\": \"string\",\n        \"OperacaoEntradaSaida\": \"string\",\n        \"TipoOperacao\": \"string\",\n        \"DataHoraDocumento\": \"string\",\n        \"NumeroNotaFiscal\": 0,\n        \"SerieNotaFiscal\": \"string\",\n        \"TipoTransacao\": \"string\",\n        \"Contador\": 0,\n        \"OrdemItemNf\": 0,\n        \"CodigoFci\": \"string\",\n        \"NfeChaveAcesso\": \"string\",\n        \"AliquotaIcms\": 0,\n        \"AliquotaIcmsRetido\": 0,\n        \"CodigoTributacaoItem\": 0,\n        \"CodigoFiscalOperacao\": 0,\n        \"QuantidadeNota\": 0,\n        \"QuantidadeSaldo\": 0,\n        \"Status\": \"string\"\n    },\n    \"QuantidadePrimeiroItemBiTributacao\": 0,\n    \"AlteracaoQtdBitributacaoComInclusaoNovosItens\": true,\n    \"DiferencaAlteracaoQtdBitributacao\": 0,\n    \"PermiteAlterarPoliticaPreco\": true,\n    \"ConfirmaAlteracaoPoliticaPreco\": \"string\",\n    \"RequisitaPecas\": true,\n    \"TransferenciaSimplificada\": [{\n        \"EmpresaTransf\": 0,\n        \"RevendaTransf\": 0,\n        \"NomeFantasia\": \"string\",\n        \"Ordem\": 0,\n        \"ItemEstoque\": 0,\n        \"QtdDisponivel\": 0,\n        \"QtdTransferencia\": 0\n    }],\n    \"ItemTransferencia\": {\n        \"ItemEstoquePub\": \"string\",\n        \"DesItemEstoque\": \"string\",\n        \"FilialSolicitante\": \"string\",\n        \"NomeSolicitante\": \"string\",\n        \"NroOrcamento\": 0,\n        \"NroOs\": 0,\n        \"EstoqueDisponivel\": 0,\n        \"FilialAtendeu\": \"string\",\n        \"NomeAtendeu\": \"string\",\n        \"StatusDescricao\": \"string\",\n        \"NroOsOrcamento\": 0,\n        \"Empresa\": 0,\n        \"Revenda\": 0,\n        \"UsuarioPedido\": 0,\n        \"ContatoPedido\": 0,\n        \"NroSolicitacao\": 0,\n        \"NroLancamento\": 0,\n        \"ItemEstoque\": 0,\n        \"QtdPedido\": 0,\n        \"DataPedido\": \"string\",\n        \"Status\": \"string\",\n        \"RevendaTransf\": 0,\n        \"QtdTransf\": 0,\n        \"ContatoTransf\": 0,\n        \"UsuarioTransf\": 0,\n        \"OrdemTransf\": 0,\n        \"DataTransf\": \"string\",\n        \"NovoId\": 0,\n        \"Id\": 0\n    },\n    \"QuantidadeProvidencia\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://auto-gwsmartapi.linx.com.br/api-e-commerce-premium/Pecas/AtendimentoBalcao/Atendimento/InserirItem",
+          "protocol": "https",
+          "host": [
+            "auto-gwsmartapi",
+            "linx",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api-e-commerce-premium",
+            "Pecas",
+            "AtendimentoBalcao",
+            "Atendimento",
+            "InserirItem"
+          ]
+        },
+        "description": "Generated from cURL: curl --location 'https://auto-gwsmartapi.linx.com.br//api-e-commerce-premium/ConsultaPecaGerencial' \\\n--header 'Content-Type: application/json-patch+json' \\\n--header 'Cache-Control: no-cache' \\\n--header 'Ocp-Apim-Subscription-Key: e0b8910e002b4c7e9cd2ebfa2b9e7697' \\\n--header 'Ambiente: 02431719000102-BARAO-PRODUCAO' \\\n--header 'Authorization;' \\\n--header 'Cookie: _cf_bm=Uyy5C2jdAOy3aYffT7wLFD0cw4OxWZoFiBdbu.qwQmE-1753793830-1.0.1.1-KFFOItx.mtK2aAXfjS4.K9fy6Zk9UU5t8BiMYvkdMGej6P1CYBrVaCR6iZe16em8D8OGDdloSlsSubJb0NpV_gUJ6yIsjUXAD239xd7F5yc; __cf_bm=L8045q_NwWj6bIr4e0sfyOookEqmRBI2gjzTFCl4zVM-1754163648-1.0.1.1-McMOV_dTYLVgTyQCMIbhuHW.kaLfXhaBFTVGbO0T2ZmydnK.hs4sZ7Su_b_Zr0.ZpCUXNiK32J.ZPdjQyMXw0E36Fibk4iZXVzRNfDJS0I' \\\n--data '{\"ConfiguracaoBase\": {\n        \"Empresa\": 1,\n        \"Revenda\": 1,\n        \"Usuario\": 0,\n        \"CodigoOrigem\": 0,\n        \"IdentificadorOrigem\": \"\",\n        \"ClienteContactado\": false\n    },\n    \"TextoPesquisa\": \"\",\n    \"CodigoItemParcial\": \"\",\n    \"CodigoEanGtin\": \"\",\n    \"DescricaoItemParcial\": \"\",\n    \"UtilizacaoItemParcial\": \"\",\n    \"GruposPecas\": \"\",\n    \"Marcas\": \"\",\n    \"ListaFornecedoresDSH\": \"\",\n    \"TipoPesquisa\": \"I\",\n    \"ClasseFabrica\": \"\",\n    \"TipoTransacao\": \"P21\",\n    \"RetiraPrecoMarkup\": false,\n    \"RecallFCA\": false,\n    \"DisponibilidadeCatalogo\": false,\n    \"Movimentados\": false,\n    \"Consultados\": true,\n    \"SomenteDisponiveis\": true,\n    \"PoliticaPreco\": {\n        \"CodigoPolitica\": 0,\n        \"PercentualSobrePrecoPublico\": 0,\n        \"PercentualSobrePrecoGarantia\": 0,\n        \"DescricaoPoliticaPreco\": \"\"\n    },\n    \"CodigoDepartamento\": 0,\n    \"DataProcessamento\": \"\",\n    \"ListaIdProdutosFraga\": [],\n    \"FiltroCatalogo\": {\n        \"Pesquisa\": \"\",\n        \"Segmento\": \"\",\n        \"Montadora\": \"\",\n        \"Ano\": \"\",\n        \"Modelo\": \"\",\n        \"Versao\": \"\",\n        \"SistemaId\": \"\",\n        \"FraMarcaId\": [],\n        \"FragaIdProduto\": \"\",\n        \"Placa\": \"\"\n    },\n\n    \"CodigoReferenciaFabrica\": \"\"\n}'"
+      },
+      "response": []
+    },
+    {
+      "name": "Busca cliente",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json-patch+json"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          },
+          {
+            "key": "Ocp-Apim-Subscription-Key",
+            "value": "e0b8910e002b4c7e9cd2ebfa2b9e7697"
+          },
+          {
+            "key": "Ambiente",
+            "value": "02431719000102-BARAO-PRODUCAO"
+          },
+          {
+            "key": "Authorization",
+            "value": ""
+          },
+          {
+            "key": "Cookie",
+            "value": "_cf_bm=Uyy5C2jdAOy3aYffT7wLFD0cw4OxWZoFiBdbu.qwQmE-1753793830-1.0.1.1-KFFOItx.mtK2aAXfjS4.K9fy6Zk9UU5t8BiMYvkdMGej6P1CYBrVaCR6iZe16em8D8OGDdloSlsSubJb0NpV_gUJ6yIsjUXAD239xd7F5yc; __cf_bm=L8045q_NwWj6bIr4e0sfyOookEqmRBI2gjzTFCl4zVM-1754163648-1.0.1.1-McMOV_dTYLVgTyQCMIbhuHW.kaLfXhaBFTVGbO0T2ZmydnK.hs4sZ7Su_b_Zr0.ZpCUXNiK32J.ZPdjQyMXw0E36Fibk4iZXVzRNfDJS0I"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"Empresa\": 0,\n    \"Revenda\": 0,\n    \"Usuario\": 0,\n    \"ValidaRg\": true,\n    \"TipoCliente\": 0,\n    \"CnpjCPF\": \"string\",\n    \"Rg\": \"string\",\n    \"Nome\": \"string\",\n    \"Fantasia\": \"string\",\n    \"Cidade\": \"string\",\n    \"UF\": \"string\",\n    \"Cep\": 0,\n    \"Ddd\": 0,\n    \"Telefone\": 0,\n    \"Categoria\": \"string\",\n    \"NascidoEntre\": true,\n    \"NascidoEntreChecked\": true,\n    \"NascidoInicial\": \"string\",\n    \"NascidoFinal\": \"string\",\n    \"TipoClassificacao\": 0,\n    \"ConsultaLGPD\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://auto-gwsmartapi.linx.com.br/api-e-commerce-premium/Geral/ConsultaClientes/ConsultaClientesPaginado",
+          "protocol": "https",
+          "host": [
+            "auto-gwsmartapi",
+            "linx",
+            "com",
+            "br"
+          ],
+          "path": [
+            "api-e-commerce-premium",
+            "Geral",
+            "ConsultaClientes",
+            "ConsultaClientesPaginado"
+          ]
+        },
+        "description": "Generated from cURL: curl --location 'https://auto-gwsmartapi.linx.com.br//api-e-commerce-premium/ConsultaPecaGerencial' \\\n--header 'Content-Type: application/json-patch+json' \\\n--header 'Cache-Control: no-cache' \\\n--header 'Ocp-Apim-Subscription-Key: e0b8910e002b4c7e9cd2ebfa2b9e7697' \\\n--header 'Ambiente: 02431719000102-BARAO-PRODUCAO' \\\n--header 'Authorization;' \\\n--header 'Cookie: _cf_bm=Uyy5C2jdAOy3aYffT7wLFD0cw4OxWZoFiBdbu.qwQmE-1753793830-1.0.1.1-KFFOItx.mtK2aAXfjS4.K9fy6Zk9UU5t8BiMYvkdMGej6P1CYBrVaCR6iZe16em8D8OGDdloSlsSubJb0NpV_gUJ6yIsjUXAD239xd7F5yc; __cf_bm=L8045q_NwWj6bIr4e0sfyOookEqmRBI2gjzTFCl4zVM-1754163648-1.0.1.1-McMOV_dTYLVgTyQCMIbhuHW.kaLfXhaBFTVGbO0T2ZmydnK.hs4sZ7Su_b_Zr0.ZpCUXNiK32J.ZPdjQyMXw0E36Fibk4iZXVzRNfDJS0I' \\\n--data '{\"ConfiguracaoBase\": {\n        \"Empresa\": 1,\n        \"Revenda\": 1,\n        \"Usuario\": 0,\n        \"CodigoOrigem\": 0,\n        \"IdentificadorOrigem\": \"\",\n        \"ClienteContactado\": false\n    },\n    \"TextoPesquisa\": \"\",\n    \"CodigoItemParcial\": \"\",\n    \"CodigoEanGtin\": \"\",\n    \"DescricaoItemParcial\": \"\",\n    \"UtilizacaoItemParcial\": \"\",\n    \"GruposPecas\": \"\",\n    \"Marcas\": \"\",\n    \"ListaFornecedoresDSH\": \"\",\n    \"TipoPesquisa\": \"I\",\n    \"ClasseFabrica\": \"\",\n    \"TipoTransacao\": \"P21\",\n    \"RetiraPrecoMarkup\": false,\n    \"RecallFCA\": false,\n    \"DisponibilidadeCatalogo\": false,\n    \"Movimentados\": false,\n    \"Consultados\": true,\n    \"SomenteDisponiveis\": true,\n    \"PoliticaPreco\": {\n        \"CodigoPolitica\": 0,\n        \"PercentualSobrePrecoPublico\": 0,\n        \"PercentualSobrePrecoGarantia\": 0,\n        \"DescricaoPoliticaPreco\": \"\"\n    },\n    \"CodigoDepartamento\": 0,\n    \"DataProcessamento\": \"\",\n    \"ListaIdProdutosFraga\": [],\n    \"FiltroCatalogo\": {\n        \"Pesquisa\": \"\",\n        \"Segmento\": \"\",\n        \"Montadora\": \"\",\n        \"Ano\": \"\",\n        \"Modelo\": \"\",\n        \"Versao\": \"\",\n        \"SistemaId\": \"\",\n        \"FraMarcaId\": [],\n        \"FragaIdProduto\": \"\",\n        \"Placa\": \"\"\n    },\n\n    \"CodigoReferenciaFabrica\": \"\"\n}'"
+      },
+      "response": []
+    }
+  ]
+}

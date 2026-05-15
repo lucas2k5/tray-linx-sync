@@ -1,4 +1,7 @@
 node_modules
+dist
 .env
+.env.local
 tray-token.json
-.DS_Store
+*.DS_Store
+.vercel

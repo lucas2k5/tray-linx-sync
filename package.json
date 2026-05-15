@@ -1,18 +1,27 @@
 {
   "name": "tray-linx-sync",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
-  "main": "index.js",
   "scripts": {
-    "start": "node ./jobs/syncStock.js"
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@supabase/supabase-js": "^2.49.8",
     "axios": "^1.10.0",
-    "bullmq": "^5.76.8",
     "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "ioredis": "^5.10.1",
+    "hono": "^4.7.11",
     "node-cron": "^4.1.0",
-    "tz": "^0.1.1"
+    "pino": "^9.7.0",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "@types/node-cron": "^3.0.11",
+    "pino-pretty": "^13.0.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
   }
 }
