@@ -69,8 +69,9 @@ Worker (concorrência: 3, retry: 3× exponencial a partir de 5s)
     │        ProductsSold, Payment, OrderInvoice
     │
     └─ linxOrderService.sendOrderToLinx(orderData)
-           Transforma payload Tray → formato Linx AutoShop
-           [envio HTTP à Linx pendente de configuração — ver seção TODOs]
+           1. buscarClienteLinx(cpf/cnpj)
+           2. inserirContato() → obtém Contato ID
+           3. inserirItem() × N produtos
 ```
 
 **Por que o delay de 8 segundos?**
@@ -281,24 +282,43 @@ O objeto retornado por `/orders/:id/complete` contém:
 
 ```
 trayOrder
-├── Order           → dados gerais (id, status, date, total, freight_value)
-├── Customer        → cadastro (name, email, cpf, cnpj, phone)
+├── Order             → dados gerais (id, status, date, total, freight_value)
+├── Customer          → cadastro (name, email, cpf, cnpj, phone)
 ├── CustomerAddresses → endereços de entrega e cobrança
-├── ProductsSold    → itens (reference, name, price, quantity)
-├── Payment         → transações de pagamento
-└── OrderInvoice    → dados de nota fiscal
+├── ProductsSold      → itens (reference, name, price, quantity)
+├── Payment           → transações de pagamento
+└── OrderInvoice      → dados de nota fiscal
 ```
 
-A transformação acontece em `services/linxOrderService.js` na função `transformTrayOrderToLinx()`. O mapeamento completo para o endpoint da Linx AutoShop está pendente de documentação — ver seção TODOs abaixo.
+O fluxo de envio à Linx implementado em `services/linxOrderService.js` segue 3 passos em sequência:
+
+| Passo | Endpoint Linx | Dados usados |
+|---|---|---|
+| 1. Buscar cliente | `POST /Geral/ConsultaClientes/ConsultaClientesPaginado` | `Customer.cpf` / `Customer.cnpj` |
+| 2. Criar atendimento | `POST /Pecas/AtendimentoBalcao/Atendimento/InserirContato` | Retorna `Contato` ID |
+| 3. Inserir itens (1×por produto) | `POST /Pecas/AtendimentoBalcao/Atendimento/InserirItem` | `ProductsSold[].reference`, `price`, `quantity` |
 
 ---
 
-## TODOs — próximos passos
+## Pendências
 
-- [ ] **Mapear campos completos** em `linxOrderService.transformTrayOrderToLinx()` conforme documentação do WebService Linx AutoShop e-Commerce Premium
-- [ ] **Descomentar a chamada HTTP** para a Linx em `services/linxOrderService.js` após definir o endpoint correto e validar o payload
-- [ ] **Adicionar Docker Compose** com serviço Redis para simplificar o deploy
-- [ ] **Monitoramento da fila** — considerar BullMQ Board ou Grafana para visualizar jobs em produção
+### Bloqueadoras (necessárias para o primeiro teste real)
+
+- [ ] **Body correto do `InserirContato`** — a collection Postman disponível tem o body errado nesse endpoint (cópia do `ConsultaPecaGerencial`). É necessário obter junto à Linx a estrutura correta do payload para criação do atendimento. O restante do fluxo já está implementado ao redor desse ponto.
+
+- [ ] **Validar mapeamento `reference` Tray → `ItemEstoque` Linx** — o campo `reference` dos produtos na Tray pode corresponder ao código público da Linx (ex: `"0290.01234"`) ou precisar de uma busca extra via `ConsultaPecaGerencial` para obter o `ItemEstoque` numérico interno. Confirmar no primeiro pedido real.
+
+- [ ] **Redis rodando no ambiente de deploy** — o servidor não inicializa sem conexão Redis ativa. Subir instância Redis e configurar `REDIS_HOST`/`REDIS_PORT` no `.env`.
+
+- [ ] **URL pública para receber webhooks da Tray** — a Tray precisa de HTTPS acessível externamente. Em desenvolvimento usar `ngrok http 3000`. Em produção garantir que `BASE_URL` aponta para o servidor público.
+
+- [ ] **Cadastrar o webhook no painel da Tray** — após ter a URL pública, registrar `POST /webhooks/tray/v1/orders` como receptor do evento `order` no painel Tray Commerce.
+
+### Melhorias futuras (não bloqueadoras)
+
+- [ ] **Docker Compose** com serviço Redis para simplificar o deploy em produção
+- [ ] **Monitoramento da fila** — BullMQ Board ou similar para visualizar jobs pendentes, falhos e concluídos
+- [ ] **Alertas de falha** — notificação (e-mail ou Slack) quando um pedido falhar as 3 tentativas de retry
 
 ---
 
