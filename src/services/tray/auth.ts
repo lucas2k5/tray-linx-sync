@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase.js';
 import type { TrayTokenResponse } from '../../types/tray.js';
 
 const STORE_ID = 'partsbarao';
-const MIN_HOURS_REMAINING = 24;
+const MIN_HOURS_REMAINING = 1;
 
 export async function getTrayToken(): Promise<string> {
   // Tenta reutilizar token salvo no Supabase

@@ -27,7 +27,7 @@ Middleware de integração e-commerce desenvolvido para a **Parts Barão** (part
 
 O app roda dois fluxos independentes no mesmo processo.
 
-### Fluxo 1 — Sincronização de estoque (Linx → Tray)
+### Fluxo 1 — Sincronização de estoque (Linx → Tray) ✅ Testado
 
 ```
 Cron 01:00 BRT
@@ -42,6 +42,7 @@ jobs/sync-stock.ts (lotes de 10 produtos)
     │
     ├─ tray/products.ts · getTrayProductByReference(reference)
     │      GET /web_api/products/?reference=...
+    │      O campo ItemEstoque da Linx é o reference do produto na Tray
     │
     ├─ tray/products.ts · updateTrayStock(productId, newStock)
     │      PUT /web_api/products/:id
@@ -49,7 +50,7 @@ jobs/sync-stock.ts (lotes de 10 produtos)
     └─ Salva resultado em sync_logs (Supabase)
 ```
 
-O campo `ItemEstoque` da Linx é o `reference` do produto na Tray. Processamento em lotes de 10 para respeitar rate limits.
+Testado com dados reais: produto `2P0721257` (ID 115 na Tray) atualizado com sucesso via `scripts/test-stock-sync.mjs`.
 
 ---
 
@@ -84,6 +85,7 @@ Worker (polling a cada 30s, até 5 pedidos por ciclo)
                 POST /Geral/ConsultaClientes/ConsultaClientesPaginado
            2. inserirContato() → obtém Contato ID
                 POST /Pecas/AtendimentoBalcao/Atendimento/InserirContato
+                ⚠️ Body pendente de validação com Linx
            3. inserirItem() × N produtos
                 POST /Pecas/AtendimentoBalcao/Atendimento/InserirItem
 ```
@@ -99,34 +101,38 @@ Worker (polling a cada 30s, até 5 pedidos por ciclo)
 ```
 tray-linx-sync/
 ├── src/
-│   ├── index.ts                    ← Entry point: Hono + cron
+│   ├── index.ts                    ← Entry point: Hono + cron jobs
 │   ├── lib/
 │   │   ├── env.ts                  ← Validação de env vars com zod (falha no startup se faltante)
 │   │   ├── supabase.ts             ← Cliente Supabase singleton
-│   │   └── logger.ts               ← Pino: JSON em produção, colorido em dev
+│   │   ├── logger.ts               ← Pino: JSON em produção, colorido em dev
+│   │   └── alerts.ts               ← Webhook de alerta quando pedido vai a failed
 │   ├── types/
 │   │   ├── tray.ts                 ← Interfaces da API Tray
 │   │   └── linx.ts                 ← Interfaces da API Linx
 │   ├── routes/
 │   │   ├── webhook.ts              ← POST /webhooks/tray/orders (thin webhook)
 │   │   ├── health.ts               ← GET /health (verifica conexão Supabase)
-│   │   └── debug.ts                ← GET /simulate-linx (bloqueado em production)
+│   │   ├── admin.ts                ← Rotas /admin protegidas por API key
+│   │   └── debug.ts                ← GET /simulate-linx, /simulate-tray-order (bloqueado em production)
 │   ├── workers/
-│   │   └── process-order.ts        ← Polling + processamento da fila
+│   │   ├── process-order.ts        ← Polling + processamento da fila (30s)
+│   │   └── recover-stuck.ts        ← Recupera pedidos travados em "processing" (5min)
 │   ├── jobs/
 │   │   └── sync-stock.ts           ← Cron de sincronização de estoque
 │   └── services/
 │       ├── tray/
-│       │   ├── auth.ts             ← Token management via Supabase
+│       │   ├── auth.ts             ← Token management via Supabase (renova com code)
 │       │   ├── orders.ts           ← getTrayOrderComplete()
 │       │   └── products.ts         ← Busca e atualização de produtos
 │       └── linx/
 │           ├── stock.ts            ← Consulta de estoque
 │           └── orders.ts           ← Envio de pedido (3 passos)
+├── scripts/
+│   └── test-stock-sync.mjs         ← Teste manual de sync de estoque (2 produtos)
 ├── supabase/
 │   └── migrations/
 │       └── 001_initial_schema.sql  ← Schema completo do banco
-├── src/index.ts
 ├── tsconfig.json
 ├── Dockerfile                      ← Multi-stage build para Railway
 ├── .env.example
@@ -136,6 +142,8 @@ tray-linx-sync/
 ---
 
 ## Banco de dados (Supabase)
+
+Projeto: `mcqpduxeqqioscmurhac` (região: sa-east-1, São Paulo)
 
 ### Tabelas
 
@@ -156,9 +164,10 @@ tray-linx-sync/
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
-| `store_id` | TEXT UNIQUE | Identificador da loja (ex: `partsbarao`) |
+| `store_id` | TEXT UNIQUE | Identificador da loja (`partsbarao`) |
 | `access_token` | TEXT | Token ativo |
-| `expires_at` | TIMESTAMPTZ | Data de expiração |
+| `refresh_token` | TEXT | Refresh token (armazenado, não usado no fluxo de renovação) |
+| `expires_at` | TIMESTAMPTZ | Data de expiração (tokens duram ~3 horas) |
 | `api_host` | TEXT | Host da API Tray |
 
 **`sync_logs`** — histórico de sincronizações de estoque
@@ -221,7 +230,7 @@ SUPABASE_SERVICE_ROLE_KEY=    # Painel Supabase → Settings → API → service
 # ── Tray Commerce ──────────────────────────────────────────
 TRAY_CONSUMER_KEY=
 TRAY_CONSUMER_SECRET=
-TRAY_AUTH_CODE=
+TRAY_AUTH_CODE=               # Código de autorização permanente da loja
 TRAY_STORE_URL=https://www.partsbarao.com.br
 
 # ── Linx AutoShop ──────────────────────────────────────────
@@ -229,8 +238,11 @@ LINX_API_URL=https://auto-gwsmartapi.linx.com.br
 LINX_SUBSCRIPTION_KEY=        # Ocp-Apim-Subscription-Key (portal Azure)
 LINX_AMBIENTE=                # Ex: 02431719000102-BARAO-PRODUCAO
 
-# ── Webhook (opcional) ─────────────────────────────────────
-WEBHOOK_SECRET=               # Para validar que requests vêm da Tray
+# ── Alertas (opcional) ─────────────────────────────────────
+ALERT_WEBHOOK_URL=            # Webhook Slack/Discord/Make para alertas de falha
+
+# ── Admin (opcional) ───────────────────────────────────────
+ADMIN_API_KEY=                # Chave para proteger rotas /admin
 ```
 
 > `.env` está no `.gitignore` e nunca deve ser commitado.
@@ -249,6 +261,7 @@ Saída esperada:
 [INFO] Servidor iniciado {"port": 3000}
 [INFO] Webhook: POST http://localhost:3000/webhooks/tray/orders
 [INFO] Health:  GET  http://localhost:3000/health
+[INFO] Admin:   POST http://localhost:3000/admin/reprocess/:scopeId
 ```
 
 ### Testar webhook manualmente
@@ -274,8 +287,16 @@ curl http://localhost:3000/health
 ```
 
 ```json
-{ "status": "ok", "timestamp": "2026-05-14T...", "db": "up" }
+{ "status": "ok", "timestamp": "2026-05-15T...", "db": "up" }
 ```
+
+### Testar sync de estoque (2 produtos)
+
+```bash
+node scripts/test-stock-sync.mjs
+```
+
+Busca 2 produtos da Linx e atualiza o estoque na Tray. Útil para validar as credenciais e o mapeamento de referências.
 
 ### Consultar estoque da Linx (apenas em development)
 
@@ -314,6 +335,10 @@ O `Dockerfile` usa **multi-stage build**:
 | `GET` | `/health` | Health check — verifica conexão com Supabase |
 | `POST` | `/webhooks/tray/orders` | Receptor de eventos da Tray (thin webhook) |
 | `GET` | `/simulate-linx` | Consulta estoque Linx (bloqueado em `production`) |
+| `GET` | `/simulate-tray-order` | Busca pedido mais recente completo da Tray (bloqueado em `production`) |
+| `GET` | `/admin/queue` | Status da fila de pedidos (requer `ADMIN_API_KEY`) |
+| `POST` | `/admin/reprocess/:scopeId` | Reprocessa pedido específico (requer `ADMIN_API_KEY`) |
+| `POST` | `/admin/reprocess-failed` | Reprocessa todos os pedidos com falha (requer `ADMIN_API_KEY`) |
 
 ### Payload do webhook Tray
 
@@ -326,6 +351,22 @@ O `Dockerfile` usa **multi-stage build**:
 
 Aceita `scope_name`/`scope_id` em snake_case ou camelCase. Eventos com `scope_name` diferente de `"order"` são ignorados silenciosamente.
 
+### Rotas de admin
+
+```bash
+# Ver status da fila
+curl http://localhost:3000/admin/queue \
+  -H "Authorization: Bearer <ADMIN_API_KEY>"
+
+# Reprocessar pedido específico
+curl -X POST http://localhost:3000/admin/reprocess/12345 \
+  -H "Authorization: Bearer <ADMIN_API_KEY>"
+
+# Reprocessar todos os falhados
+curl -X POST http://localhost:3000/admin/reprocess-failed \
+  -H "Authorization: Bearer <ADMIN_API_KEY>"
+```
+
 ---
 
 ## Comportamento do worker
@@ -336,36 +377,49 @@ Aceita `scope_name`/`scope_id` em snake_case ou camelCase. Eventos com `scope_na
 | Pedidos por ciclo | 5 | Limita concorrência sem travar o processo |
 | Tentativas máximas | 3 | Configurável por job via `max_attempts` |
 | Falha → `pending` | Sim | Reprocessado no próximo ciclo |
-| Após 3 falhas | `failed` | Não reprocessado; requer intervenção manual |
+| Após 3 falhas | `failed` | Não reprocessado; requer intervenção via `/admin` |
 | Lock de concorrência | `isProcessing` flag | Impede sobreposição de ciclos |
+| Recuperação de travados | 5 minutos | `recover-stuck.ts` resgata jobs em `processing` há mais de 5min |
 
 ---
 
 ## Gestão de token Tray
 
-O token é obtido via `POST /web_api/auth` e persistido na tabela `tray_tokens` do Supabase (substitui o antigo `tray-token.json` em disco).
+O token é obtido via `POST /web_api/auth` e persistido na tabela `tray_tokens` do Supabase.
 
-- Token com **mais de 24h de validade** → reutiliza sem chamada extra
-- Token próximo de expirar → renova automaticamente e salva no banco
+**Comportamento confirmado em testes:**
+
+- Tokens Tray têm validade de **~3 horas**
+- O `TRAY_AUTH_CODE` é um código **permanente** da loja — pode ser reutilizado a cada renovação
+- O fluxo correto de renovação é `consumer_key + consumer_secret + code` (nunca incluir `refresh_token` — a API retorna o token expirado nesse caso)
+- Token com **mais de 1h de validade** → reutilizado do Supabase sem chamada extra
+- Token com menos de 1h → renova automaticamente e salva no banco
+
+---
+
+## Mapeamento de campos
+
+| Campo Linx | Campo Tray | Status |
+|---|---|---|
+| `ItemEstoque` | `reference` (produto) | ✅ Confirmado em teste real |
+| `QuantidadeDisponivel` | `stock` (produto) | ✅ Confirmado em teste real |
+| `CPF`/`CNPJ` do cliente | `Customer.cpf` / `Customer.cnpj` | ✅ Confirmado (pedido 2627) |
 
 ---
 
 ## Pendências
 
-### Bloqueadoras
+### Bloqueadoras para fluxo de pedidos
 
-- [ ] **Criar projeto Supabase** e executar `supabase/migrations/001_initial_schema.sql`
-- [ ] **Preencher `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`** no `.env`
-- [ ] **Validar body do `InserirContato`** — a collection Postman disponível tem payload incorreto neste endpoint. Obter estrutura correta com a Linx AutoShop. O restante do fluxo já está implementado ao redor desse ponto (`src/services/linx/orders.ts`)
-- [ ] **Validar mapeamento `reference` Tray → `ItemEstoque` Linx** — confirmar no primeiro pedido real se o campo `reference` da Tray corresponde diretamente ao `ItemEstoque` numérico da Linx ou se precisa de busca intermediária via `ConsultaPecaGerencial`
-- [ ] **URL pública para webhooks** — a Tray precisa de HTTPS acessível externamente. Em desenvolvimento: `ngrok http 3000`. Em produção: URL do Railway
+- [ ] **Validar body do `InserirContato`** — payload do endpoint `POST /Pecas/AtendimentoBalcao/Atendimento/InserirContato` precisa ser confirmado com a Linx. O restante do fluxo está implementado em `src/services/linx/orders.ts`
+- [ ] **URL pública para webhooks** — a Tray exige HTTPS externo. Em dev: `ngrok http 3000`. Em produção: URL do Railway após deploy
 - [ ] **Cadastrar webhook no painel Tray** — após ter a URL, registrar `POST /webhooks/tray/orders` como receptor do evento `order`
 
 ### Melhorias futuras
 
 - [ ] Validação de assinatura do webhook via `WEBHOOK_SECRET`
-- [ ] Alertas de falha (e-mail ou Slack) quando pedido atingir `status = failed`
-- [ ] Interface de administração para visualizar `order_queue` e reprocessar pedidos com falha
+- [ ] Configurar `ALERT_WEBHOOK_URL` para notificações de pedidos falhados (Slack/Discord/Make)
+- [ ] Configurar `ADMIN_API_KEY` em produção para proteger as rotas `/admin`
 
 ---
 
