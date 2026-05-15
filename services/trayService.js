@@ -43,17 +43,16 @@ export async function getTrayToken() {
   return response.data.access_token;
 }
 
-// 🔹 Busca detalhes completos do pedido na Tray
-export async function getTrayOrderDetails(orderId, token) {
+// 🔹 Busca detalhes completos do pedido na Tray (rota /complete retorna tudo em uma chamada)
+export async function getTrayOrderComplete(orderId, token) {
   try {
     const response = await axios.get(
-      `${TRAY_STORE_BASE_URL}/web_api/orders/${orderId}`,
-      { params: { access_token: token, complete: 1 } }
+      `${TRAY_STORE_BASE_URL}/web_api/orders/${orderId}/complete`,
+      { params: { access_token: token } }
     );
-
     return response.data;
   } catch (err) {
-    console.error(`❌ Erro ao buscar detalhes do pedido ${orderId}:`, err.message);
+    console.error(`❌ Erro ao buscar pedido completo ${orderId}:`, err.message);
     if (err.response) console.error('📦 Response da API:', err.response.data);
     throw err;
   }
@@ -64,7 +63,8 @@ export async function getTrayProductByReference(reference, token) {
   try {
     // Faz a requisição para a Tray filtrando pelo reference
     const response = await axios.get(
-      `https://www.partsbarao.com.br/web_api/products/?access_token=${token}&reference=${reference}`
+      `${TRAY_STORE_BASE_URL}/web_api/products/`,
+      { params: { access_token: token, reference } }
     );
 
     // Se encontrou produtos, pega o primeiro e retorna apenas os dados necessários
@@ -92,9 +92,9 @@ export async function updateTrayStock(productId, newStock, token) {
   try {
     // Requisição PUT para atualizar o estoque
     const response = await axios.put(
-      `https://www.partsbarao.com.br/web_api/products/${productId}?access_token=${token}`,
-      { Product: { stock: newStock } }, // Atualiza apenas estoque
-      { headers: { 'Content-Type': 'application/json' } }
+      `${TRAY_STORE_BASE_URL}/web_api/products/${productId}`,
+      { Product: { stock: newStock } },
+      { headers: { 'Content-Type': 'application/json' }, params: { access_token: token } }
     );
 
     // Se a resposta contém ID do produto, considera sucesso

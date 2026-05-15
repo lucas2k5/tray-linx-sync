@@ -42,8 +42,8 @@ export async function fetchStockFromLinx() {
         headers: {
           'Content-Type': 'application/json-patch+json',
           'Cache-Control': 'no-cache',
-          'Ocp-Apim-Subscription-Key': 'e0b8910e002b4c7e9cd2ebfa2b9e7697',
-          Ambiente: '02431719000102-BARAO-PRODUCAO',
+          'Ocp-Apim-Subscription-Key': process.env.LINX_SUBSCRIPTION_KEY,
+          Ambiente: process.env.LINX_AMBIENTE,
           Authorization: ''
         }
       }
