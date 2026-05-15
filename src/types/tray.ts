@@ -15,16 +15,17 @@ export interface TrayProductResponse {
   Products?: Array<{ Product: TrayProduct }>;
 }
 
-export interface TrayOrderItem {
+export interface TrayCustomerAddress {
   id?: string | number;
-  reference?: string;
-  name?: string;
-  price?: string | number;
-  Price?: string | number;
-  quantity?: string | number;
-  Quantity?: string | number;
-  discount?: string | number;
-  ProductsSold?: TrayOrderItem;
+  zip_code?: string;
+  address?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  type?: string;
+  recipient?: string;
 }
 
 export interface TrayCustomer {
@@ -33,35 +34,52 @@ export interface TrayCustomer {
   email?: string;
   cpf?: string;
   cnpj?: string;
-  CpfCnpj?: string;
-  documento?: string;
   phone?: string;
-}
-
-export interface TrayAddress {
+  cellphone?: string;
   zip_code?: string;
-  street?: string;
+  address?: string;
   number?: string;
   complement?: string;
   neighborhood?: string;
   city?: string;
   state?: string;
+  CustomerAddresses?: Array<{ CustomerAddress: TrayCustomerAddress }>;
 }
 
+export interface TrayOrderItem {
+  // Tray wraps each item in a ProductsSold key within the array
+  ProductsSold?: {
+    id?: string | number;
+    reference?: string;
+    name?: string;
+    price?: string | number;
+    quantity?: string | number;
+    discount?: string | number;
+    product_id?: string | number;
+  };
+  // Fallback for flat format
+  id?: string | number;
+  reference?: string;
+  price?: string | number;
+  quantity?: string | number;
+  discount?: string | number;
+}
+
+// Customer, ProductsSold, Payment e OrderInvoice são todos filhos de Order
 export interface TrayOrderComplete {
   Order?: {
     id: string | number;
     status?: string;
     date?: string;
     total?: string | number;
-    freight_value?: string | number;
     payment_method?: string;
+    shipment_value?: string | number;
+    billing_address?: string;
+    Customer?: TrayCustomer;
+    ProductsSold?: TrayOrderItem[];
+    Payment?: unknown; // TODO: tipar conforme doc Tray
+    OrderInvoice?: unknown; // TODO: tipar conforme doc Tray
   };
-  Customer?: TrayCustomer;
-  CustomerAddresses?: TrayAddress[];
-  ProductsSold?: TrayOrderItem[];
-  Payment?: unknown; // TODO: tipar conforme doc Tray
-  OrderInvoice?: unknown; // TODO: tipar conforme doc Tray
 }
 
 export interface LinxStockItem {

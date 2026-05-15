@@ -4,6 +4,7 @@ import { logger } from '../../lib/logger.js';
 import type {
   LinxClienteResult,
   LinxClienteResponse,
+  LinxCadastrarClienteResponse,
   LinxInserirContatoResponse,
   LinxInserirItemResponse,
   LinxOrderPayload,
@@ -28,7 +29,19 @@ const CONFIG_ORIGEM = {
   IdentificadorOrigem: '',
 };
 
-// ─── Passo 1: Busca cliente na Linx pelo CPF/CNPJ ────────────────────────────
+// ─── Helpers de telefone ─────────────────────────────────────────────────────
+
+function parseDDD(phone: string | undefined): number {
+  const digits = (phone ?? '').replace(/\D/g, '');
+  return digits.length >= 2 ? parseInt(digits.substring(0, 2)) : 0;
+}
+
+function parseTelefone(phone: string | undefined): number {
+  const digits = (phone ?? '').replace(/\D/g, '');
+  return digits.length > 2 ? parseInt(digits.substring(2)) : 0;
+}
+
+// ─── Passo 1a: Busca cliente na Linx pelo CPF/CNPJ ───────────────────────────
 async function buscarClienteLinx(cpfCnpj: string): Promise<LinxClienteResult | null> {
   const digits = cpfCnpj.replace(/\D/g, '');
   const isCnpj = digits.length > 11;
@@ -69,24 +82,107 @@ async function buscarClienteLinx(cpfCnpj: string): Promise<LinxClienteResult | n
   return clientes[0] ?? null;
 }
 
-// ─── Passo 2: Cria atendimento na Linx ───────────────────────────────────────
-async function inserirContato(
-  clienteLinx: LinxClienteResult | null,
-  trayOrder: TrayOrderComplete
-): Promise<number> {
-  const orderId = trayOrder.Order?.id ?? 'unknown';
+// ─── Passo 1b: Cadastra cliente novo na Linx ─────────────────────────────────
+async function cadastrarClienteSimplificado(customer: TrayCustomer): Promise<number> {
+  const cpfCnpj = (customer.cpf ?? customer.cnpj ?? '').replace(/\D/g, '');
+  const tipoPessoa = cpfCnpj.length > 11 ? 1 : 0;
+  const cep = parseInt((customer.zip_code ?? '').replace(/\D/g, '') || '0');
 
   const body = {
-    configuracaoOrigem: {
-      ...CONFIG_ORIGEM,
-      IdentificadorOrigem: `TRAY-${orderId}`,
-    },
-    // TODO: confirmar payload exato com a Linx — a collection Postman tem body
-    // incorreto neste endpoint (cópia de ConsultaPecaGerencial). Ajustar quando
-    // a Linx fornecer a estrutura correta.
-    Contato: clienteLinx?.Codigo ?? clienteLinx?.CodigoCliente ?? 0,
+    ObrigaCPFCNPJ: true,
+    CPFCNPJ: cpfCnpj,
+    Identidade: '',
+    CEP: cep,
+    Cidade: customer.city ?? '',
+    UF: customer.state ?? '',
+    InscricaoEstadual: '',
+    Nome: customer.name ?? '',
+    Celular: parseTelefone(customer.cellphone),
+    VerificaTelefone: false,
+    Telefone: parseTelefone(customer.phone),
+    TipoPessoa: tipoPessoa,
+    BPVCategoria: false,
+    Categoria: 0,
+    TipoVia: '',
+    DDD: parseDDD(customer.phone),
+    DDDCelular: parseDDD(customer.cellphone),
+    EmailCasa: customer.email ?? '',
+    EmailTrabalho: '',
+    Tipo: '',
+    CNH: 0,
+    RamoAtividade: 0,
+    Ramal: 0,
+    PaisCelular: 0,
+    Endereco: customer.address ?? '',
+    Complemento: customer.complement ?? '',
+    Bairro: customer.neighborhood ?? '',
+    Regiao: 0,
+    OrigemCadastro: 'ECOMMERCE',
+    Segmento: 0,
+    UsuarioVendedor: 0,
+    Empresa: CONFIG_ORIGEM.Empresa,
+    Revenda: CONFIG_ORIGEM.Revenda,
+    Departamento: 0,
+    DataNascimento: '',
+    EstadoCivil: 0,
+    Cliente: 0,
+    Fantasia: '',
+    ValidarCamposObrigatorios: true,
+    Clifor: '',
+    EnderecoCobranca: 0,
+    BloqueioCredito: '',
+    CaixaPostal: '',
+    Fax: 0,
+    DDDFax: 0,
+    Observacao: '',
+    Origem: '',
+    InscricaoMunicipal: '',
+    CadastraCepAutomaticamente: true,
+    NaoValidarCepCadastroAutomatico: true,
+    ClienteEstrangeiro: '',
+    NroPassaporte: '',
+    IndicadorInscricaoEstadual: 0,
+    BypassValidacaoDocumento: true,
+    RecebeEmail: '',
+    RecebeTelefonema: '',
+    RecebeSms: '',
+  };
+
+  const response = await axios.post<LinxCadastrarClienteResponse>(
+    `${LINX_ENDPOINT}/Geral/ManutencaoClienteSimplificado/CadastrarClienteSimplificado`,
+    body,
+    { headers: LINX_HEADERS }
+  );
+
+  const data = response.data;
+  const codigoCliente = data.Cliente ?? data.CodigoCliente ?? data.Codigo;
+
+  if (!codigoCliente) {
+    throw new Error('CadastrarClienteSimplificado não retornou código de cliente');
+  }
+
+  return Number(codigoCliente);
+}
+
+// ─── Passo 2: Cria atendimento na Linx ───────────────────────────────────────
+async function inserirContato(codigoCliente: number, orderId: string | number): Promise<number> {
+  const body = {
+    Cliente: codigoCliente,
     TipoTransacao: 'P21',
-    PedidoOrigem: `TRAY-${orderId}`,
+    Contato: 0,
+    DadosContato: {
+      FormaContato: 0,
+      TipoContato: 0,
+      SubTipoContato: 0,
+      OrigemTrafego: 0,
+    },
+    Empresa: CONFIG_ORIGEM.Empresa,
+    Revenda: CONFIG_ORIGEM.Revenda,
+    Usuario: CONFIG_ORIGEM.Usuario,
+    CodigoOrigem: CONFIG_ORIGEM.CodigoOrigem,
+    IdentificadorOrigem: `TRAY-${orderId}`,
+    ClienteContactado: true,
+    NroSolicitacao: 0,
   };
 
   const response = await axios.post<LinxInserirContatoResponse>(
@@ -192,9 +288,10 @@ async function inserirItem(
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function extrairDocumento(customer: TrayCustomer | undefined): string {
   if (!customer) return '';
-  return customer.cpf ?? customer.cnpj ?? customer.CpfCnpj ?? customer.documento ?? '';
+  return customer.cpf ?? customer.cnpj ?? '';
 }
 
 function mapTrayItemsToLinx(
@@ -202,53 +299,63 @@ function mapTrayItemsToLinx(
 ): Array<{ ItemEstoque: number; Quantidade: number; ValorUnitario: number; Desconto: number }> {
   if (!productsSold?.length) return [];
 
-  return productsSold.map((entry) => {
-    const item = entry.ProductsSold ?? entry;
-    return {
-      // TODO: validar se reference da Tray bate direto com ItemEstoque numérico
-      // ou se precisa busca extra via ConsultaPecaGerencial
-      ItemEstoque: parseInt(String(item.reference ?? item.id ?? 0)),
-      Quantidade: parseFloat(String(item.quantity ?? item.Quantity ?? 1)),
-      ValorUnitario: parseFloat(String(item.price ?? item.Price ?? 0)),
-      Desconto: parseFloat(String(item.discount ?? 0)),
-    };
-  });
+  return productsSold
+    .map((entry) => {
+      const item = entry.ProductsSold ?? entry;
+      const itemEstoque = parseInt(String(item.reference ?? item.id ?? 0));
+      if (!itemEstoque) return null;
+      return {
+        ItemEstoque: itemEstoque,
+        Quantidade: parseFloat(String(item.quantity ?? 1)),
+        ValorUnitario: parseFloat(String(item.price ?? 0)),
+        Desconto: parseFloat(String(item.discount ?? 0)),
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 }
 
 // ─── Orquestrador principal ───────────────────────────────────────────────────
 export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise<LinxOrderPayload> {
-  const orderId = `TRAY-${trayOrderData.Order?.id ?? 'unknown'}`;
-  const log = logger.child({ orderId });
+  const order = trayOrderData.Order;
+  const orderId = order?.id ?? 'unknown';
+  const log = logger.child({ orderId: `TRAY-${orderId}` });
 
   log.info('Iniciando envio para Linx AutoShop');
 
-  // Passo 1 — buscar cliente
-  const documento = extrairDocumento(trayOrderData.Customer);
-  let clienteLinx: LinxClienteResult | null = null;
+  const customer = order?.Customer;
+
+  // Passo 1 — buscar cliente, cadastrar se não existir
+  const documento = extrairDocumento(customer);
+  let codigoCliente = 0;
 
   if (documento) {
     const masked = documento.slice(0, -3).replace(/\d/g, '*') + documento.slice(-3);
     log.info({ doc: masked }, 'Buscando cliente na Linx');
     try {
-      clienteLinx = await buscarClienteLinx(documento);
+      const clienteLinx = await buscarClienteLinx(documento);
       if (clienteLinx) {
-        log.info({ codigo: clienteLinx.Codigo ?? clienteLinx.CodigoCliente }, 'Cliente encontrado na Linx');
+        codigoCliente = clienteLinx.Codigo ?? clienteLinx.CodigoCliente ?? 0;
+        log.info({ codigoCliente }, 'Cliente encontrado na Linx');
+      } else if (customer) {
+        log.info('Cliente não encontrado — cadastrando na Linx');
+        codigoCliente = await cadastrarClienteSimplificado(customer);
+        log.info({ codigoCliente }, 'Cliente cadastrado na Linx');
       } else {
-        log.warn('Cliente não encontrado na Linx, continuando sem vínculo');
+        log.warn('Cliente não encontrado e sem dados para cadastrar');
       }
     } catch (err: unknown) {
-      log.warn({ err: err instanceof Error ? err.message : String(err) }, 'Erro ao buscar cliente na Linx');
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, 'Erro ao buscar/criar cliente — continuando sem vínculo');
     }
   } else {
     log.warn('Pedido sem CPF/CNPJ no payload Tray');
   }
 
   // Passo 2 — criar atendimento
-  const contatoId = await inserirContato(clienteLinx, trayOrderData);
+  const contatoId = await inserirContato(codigoCliente, orderId);
   log.info({ contatoId }, 'Atendimento criado na Linx');
 
   // Passo 3 — inserir itens
-  const itens = mapTrayItemsToLinx(trayOrderData.ProductsSold);
+  const itens = mapTrayItemsToLinx(order?.ProductsSold);
   log.info({ count: itens.length }, 'Inserindo itens no atendimento');
 
   for (const item of itens) {
@@ -265,5 +372,5 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
 
   log.info({ contatoId }, 'Pedido enviado à Linx com sucesso');
 
-  return { pedidoOrigem: orderId, raw: trayOrderData };
+  return { pedidoOrigem: `TRAY-${orderId}`, raw: trayOrderData };
 }

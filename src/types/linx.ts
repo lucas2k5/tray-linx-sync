@@ -26,6 +26,16 @@ export interface LinxClienteResponse {
   Clientes?: LinxClienteResult[];
 }
 
+export interface LinxCadastrarClienteResponse {
+  Cliente?: number;
+  CodigoCliente?: number;
+  Codigo?: number;
+  Mensagem?: string;
+  Sucesso?: boolean;
+  // TODO: tipar completamente quando tivermos response real
+  [key: string]: unknown;
+}
+
 // TODO: tipar resposta completa de InserirContato e InserirItem conforme doc Linx
 export type LinxInserirContatoResponse = Record<string, unknown>;
 export type LinxInserirItemResponse = Record<string, unknown>;
