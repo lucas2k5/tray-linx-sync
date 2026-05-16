@@ -83,6 +83,7 @@ async function processOrder(order: Record<string, unknown>): Promise<void> {
         status: 'done',
         linx_response: linxResponse as unknown as Record<string, unknown>,
         processed_at: new Date().toISOString(),
+        error_message: null,
       })
       .eq('scope_id', scopeId);
 
