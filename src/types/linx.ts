@@ -1,18 +1,10 @@
-export interface LinxConfigBase {
-  Empresa: number;
-  Revenda: number;
-  Usuario: number;
-  CodigoOrigem: number;
-  IdentificadorOrigem: string;
-  ClienteContactado: boolean;
-}
-
 export interface LinxStockApiItem {
   ItemEstoque?: string;
-  QuantidadeDisponivel?: number;
+  ItemEstoquePublico?: string;
   CodigoEstoque?: number;
-  DescricaoItem?: string;
-  PrecoPublico?: number;
+  QuantidadeDisponivel?: number;
+  DescricaoItemEstoque?: string;
+  Preco?: number;
 }
 
 export interface LinxClienteResult {
@@ -27,22 +19,20 @@ export interface LinxClienteResponse {
 }
 
 export interface LinxCadastrarClienteResponse {
-  Cliente?: number;
-  CodigoCliente?: number;
-  Codigo?: number;
-  Mensagem?: string;
-  Sucesso?: boolean;
-  // TODO: tipar completamente quando tivermos response real
-  [key: string]: unknown;
+  Cliente: number;
 }
 
-// TODO: tipar resposta completa de InserirContato e InserirItem conforme doc Linx
-export type LinxInserirContatoResponse = Record<string, unknown>;
-export type LinxInserirItemResponse = Record<string, unknown>;
+// InserirContato retorna número inteiro direto (ex: 60833), não JSON
+export type LinxInserirContatoResponse = number;
+
+// InserirItem retorna string (ex: "Item alterado com sucesso!")
+export type LinxInserirItemResponse = string;
 
 export interface LinxOrderPayload {
   pedidoOrigem: string;
-  raw: unknown;
+  contatoId: number;
+  itensInseridos: number;
+  itensFalhados: number;
 }
 
 export interface NormalizedStockItem {

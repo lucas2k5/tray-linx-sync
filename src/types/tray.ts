@@ -15,70 +15,108 @@ export interface TrayProductResponse {
   Products?: Array<{ Product: TrayProduct }>;
 }
 
-export interface TrayCustomerAddress {
-  id?: string | number;
-  zip_code?: string;
-  address?: string;
-  number?: string;
-  complement?: string;
-  neighborhood?: string;
-  city?: string;
-  state?: string;
-  type?: string;
-  recipient?: string;
+export interface TrayCustomerAddressWrapper {
+  CustomerAddress: {
+    id?: string;
+    address?: string;
+    number?: string;
+    complement?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    zip_code?: string;
+    recipient?: string;
+    type?: string;
+  };
 }
 
 export interface TrayCustomer {
-  id?: string | number;
+  id?: string;
   name?: string;
   email?: string;
   cpf?: string;
   cnpj?: string;
   phone?: string;
   cellphone?: string;
-  zip_code?: string;
   address?: string;
   number?: string;
   complement?: string;
   neighborhood?: string;
   city?: string;
   state?: string;
-  CustomerAddresses?: Array<{ CustomerAddress: TrayCustomerAddress }>;
+  zip_code?: string;
+  country?: string;
+  CustomerAddresses?: TrayCustomerAddressWrapper[];
 }
 
-export interface TrayOrderItem {
-  // Tray wraps each item in a ProductsSold key within the array
-  ProductsSold?: {
-    id?: string | number;
-    reference?: string;
-    name?: string;
-    price?: string | number;
-    quantity?: string | number;
-    discount?: string | number;
-    product_id?: string | number;
-  };
-  // Fallback for flat format
-  id?: string | number;
+export interface TrayProductSold {
+  id?: string;
+  product_id?: string;
+  name?: string;
   reference?: string;
-  price?: string | number;
-  quantity?: string | number;
-  discount?: string | number;
+  quantity?: string;
+  price?: string;
+  original_price?: string;
+  cost_price?: string;
+  brand?: string;
+  model?: string;
+  ean?: string;
+  weight?: string;
+  discount?: string;
 }
 
-// Customer, ProductsSold, Payment e OrderInvoice são todos filhos de Order
+export interface TrayProductSoldWrapper {
+  ProductsSold: TrayProductSold;
+}
+
+export interface TrayOrderInvoiceWrapper {
+  OrderInvoice?: {
+    id?: string;
+    number?: string;
+    serie?: string;
+    value?: string;
+    key?: string;
+    issue_date?: string;
+    xml_danfe?: string;
+  };
+}
+
+export interface TrayPaymentWrapper {
+  Payment?: {
+    id?: string;
+    method?: string;
+    payment_place?: string;
+    value?: string;
+    date?: string;
+    note?: string;
+  };
+}
+
+export interface TrayMarketplaceOrderWrapper {
+  marketplace_name?: string;
+  marketplace_order_id?: string;
+  marketplace_shipping_id?: string;
+  marketplace_seller_name?: string;
+}
+
+// Tudo está aninhado dentro de Order — não existe Customer/ProductsSold no topo
 export interface TrayOrderComplete {
   Order?: {
-    id: string | number;
+    id: string;
     status?: string;
     date?: string;
-    total?: string | number;
+    total?: string;
+    discount?: string;
+    shipment_value?: string;
+    point_sale?: string;
     payment_method?: string;
-    shipment_value?: string | number;
-    billing_address?: string;
+    external_code?: string;
+    store_note?: string;
     Customer?: TrayCustomer;
-    ProductsSold?: TrayOrderItem[];
-    Payment?: unknown; // TODO: tipar conforme doc Tray
-    OrderInvoice?: unknown; // TODO: tipar conforme doc Tray
+    ProductsSold?: TrayProductSoldWrapper[];
+    OrderInvoice?: TrayOrderInvoiceWrapper[];
+    Payment?: TrayPaymentWrapper[];
+    MarketplaceOrder?: TrayMarketplaceOrderWrapper[];
   };
 }
 

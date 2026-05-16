@@ -1,15 +1,12 @@
 import axios from 'axios';
 import { env } from '../../lib/env.js';
 import { logger } from '../../lib/logger.js';
+import { buscarCodigoEstoque } from './stock.js';
 import type {
-  LinxClienteResult,
-  LinxClienteResponse,
   LinxCadastrarClienteResponse,
-  LinxInserirContatoResponse,
-  LinxInserirItemResponse,
   LinxOrderPayload,
 } from '../../types/linx.js';
-import type { TrayOrderComplete, TrayCustomer, TrayOrderItem } from '../../types/tray.js';
+import type { TrayOrderComplete, TrayCustomer } from '../../types/tray.js';
 
 const LINX_ENDPOINT = `${env.LINX_API_URL}/api-e-commerce-premium`;
 
@@ -21,15 +18,18 @@ const LINX_HEADERS = {
   Authorization: '',
 };
 
-const CONFIG_ORIGEM = {
+// CodigoOrigem: 32 = Atendimento Balcão (0 causa erro na Linx)
+const CONFIG_ORIGEM_ATENDIMENTO = {
   Empresa: 1,
   Revenda: 1,
   Usuario: 0,
-  CodigoOrigem: 0,
+  CodigoOrigem: 32,
   IdentificadorOrigem: '',
+  ClienteContactado: true,
+  NroSolicitacao: 0,
 };
 
-// ─── Helpers de telefone ─────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function parseDDD(phone: string | undefined): number {
   const digits = (phone ?? '').replace(/\D/g, '');
@@ -41,111 +41,53 @@ function parseTelefone(phone: string | undefined): number {
   return digits.length > 2 ? parseInt(digits.substring(2)) : 0;
 }
 
-// ─── Passo 1a: Busca cliente na Linx pelo CPF/CNPJ ───────────────────────────
-async function buscarClienteLinx(cpfCnpj: string): Promise<LinxClienteResult | null> {
-  const digits = cpfCnpj.replace(/\D/g, '');
-  const isCnpj = digits.length > 11;
-
-  const body = {
-    Empresa: CONFIG_ORIGEM.Empresa,
-    Revenda: CONFIG_ORIGEM.Revenda,
-    Usuario: CONFIG_ORIGEM.Usuario,
-    ValidaRg: false,
-    TipoCliente: isCnpj ? 2 : 1,
-    CnpjCPF: digits,
-    Rg: '',
-    Nome: '',
-    Fantasia: '',
-    Cidade: '',
-    UF: '',
-    Cep: 0,
-    Ddd: 0,
-    Telefone: 0,
-    Categoria: '',
-    NascidoEntre: false,
-    NascidoEntreChecked: false,
-    NascidoInicial: '',
-    NascidoFinal: '',
-    TipoClassificacao: 0,
-    ConsultaLGPD: false,
-  };
-
-  const response = await axios.post<LinxClienteResponse>(
-    `${LINX_ENDPOINT}/Geral/ConsultaClientes/ConsultaClientesPaginado`,
-    body,
-    { headers: LINX_HEADERS }
-  );
-
-  const clientes = response.data?.Clientes ?? (response.data as unknown as LinxClienteResult[]);
-  if (!Array.isArray(clientes) || clientes.length === 0) return null;
-
-  return clientes[0] ?? null;
+function extrairDocumento(customer: TrayCustomer | undefined): string {
+  if (!customer) return '';
+  const cpf = (customer.cpf ?? '').replace(/\D/g, '');
+  const cnpj = (customer.cnpj ?? '').replace(/\D/g, '');
+  return cpf || cnpj;
 }
 
-// ─── Passo 1b: Cadastra cliente novo na Linx ─────────────────────────────────
-async function cadastrarClienteSimplificado(customer: TrayCustomer): Promise<number> {
-  const cpfCnpj = (customer.cpf ?? customer.cnpj ?? '').replace(/\D/g, '');
+// ─── Passo 1: Cadastrar cliente ───────────────────────────────────────────────
+async function cadastrarCliente(customer: TrayCustomer): Promise<number> {
+  const cpfCnpj = extrairDocumento(customer);
   const tipoPessoa = cpfCnpj.length > 11 ? 1 : 0;
   const cep = parseInt((customer.zip_code ?? '').replace(/\D/g, '') || '0');
+
+  // Endereço: address + número concatenados (max 70 chars)
+  const enderecoCompleto = [customer.address, customer.number]
+    .filter(Boolean)
+    .join(', ')
+    .substring(0, 70);
 
   const body = {
     ObrigaCPFCNPJ: true,
     CPFCNPJ: cpfCnpj,
-    Identidade: '',
     CEP: cep,
-    Cidade: customer.city ?? '',
-    UF: customer.state ?? '',
-    InscricaoEstadual: '',
-    Nome: customer.name ?? '',
+    Cidade: (customer.city ?? '').substring(0, 50),
+    UF: (customer.state ?? '').substring(0, 2),
+    Nome: (customer.name ?? '').substring(0, 70),
     Celular: parseTelefone(customer.cellphone),
     VerificaTelefone: false,
     Telefone: parseTelefone(customer.phone),
     TipoPessoa: tipoPessoa,
     BPVCategoria: false,
-    Categoria: 0,
-    TipoVia: '',
+    Categoria: 1,
     DDD: parseDDD(customer.phone),
     DDDCelular: parseDDD(customer.cellphone),
-    EmailCasa: customer.email ?? '',
-    EmailTrabalho: '',
-    Tipo: '',
-    CNH: 0,
-    RamoAtividade: 0,
-    Ramal: 0,
-    PaisCelular: 0,
-    Endereco: customer.address ?? '',
-    Complemento: customer.complement ?? '',
-    Bairro: customer.neighborhood ?? '',
-    Regiao: 0,
+    EmailCasa: (customer.email ?? '').substring(0, 150),
+    Endereco: enderecoCompleto,
+    Complemento: (customer.complement ?? '').substring(0, 60),
+    Bairro: (customer.neighborhood ?? '').substring(0, 50),
     OrigemCadastro: 'ECOMMERCE',
-    Segmento: 0,
-    UsuarioVendedor: 0,
-    Empresa: CONFIG_ORIGEM.Empresa,
-    Revenda: CONFIG_ORIGEM.Revenda,
-    Departamento: 0,
-    DataNascimento: '',
-    EstadoCivil: 0,
+    Empresa: 1,
+    Revenda: 1,
     Cliente: 0,
-    Fantasia: '',
-    ValidarCamposObrigatorios: true,
-    Clifor: '',
-    EnderecoCobranca: 0,
-    BloqueioCredito: '',
-    CaixaPostal: '',
-    Fax: 0,
-    DDDFax: 0,
-    Observacao: '',
-    Origem: '',
-    InscricaoMunicipal: '',
+    ValidarCamposObrigatorios: false,
+    Clifor: 'C',
+    EnderecoCobranca: 1,
     CadastraCepAutomaticamente: true,
     NaoValidarCepCadastroAutomatico: true,
-    ClienteEstrangeiro: '',
-    NroPassaporte: '',
-    IndicadorInscricaoEstadual: 0,
-    BypassValidacaoDocumento: true,
-    RecebeEmail: '',
-    RecebeTelefonema: '',
-    RecebeSms: '',
   };
 
   const response = await axios.post<LinxCadastrarClienteResponse>(
@@ -154,18 +96,16 @@ async function cadastrarClienteSimplificado(customer: TrayCustomer): Promise<num
     { headers: LINX_HEADERS }
   );
 
-  const data = response.data;
-  const codigoCliente = data.Cliente ?? data.CodigoCliente ?? data.Codigo;
-
+  const codigoCliente = response.data?.Cliente;
   if (!codigoCliente) {
-    throw new Error('CadastrarClienteSimplificado não retornou código de cliente');
+    throw new Error(`CadastrarClienteSimplificado não retornou código de cliente. Response: ${JSON.stringify(response.data)}`);
   }
 
-  return Number(codigoCliente);
+  return codigoCliente;
 }
 
-// ─── Passo 2: Cria atendimento na Linx ───────────────────────────────────────
-async function inserirContato(codigoCliente: number, orderId: string | number): Promise<number> {
+// ─── Passo 2: Abrir atendimento ───────────────────────────────────────────────
+async function inserirContato(codigoCliente: number, orderId: string): Promise<number> {
   const body = {
     Cliente: codigoCliente,
     TipoTransacao: 'P21',
@@ -176,42 +116,42 @@ async function inserirContato(codigoCliente: number, orderId: string | number): 
       SubTipoContato: 0,
       OrigemTrafego: 0,
     },
-    Empresa: CONFIG_ORIGEM.Empresa,
-    Revenda: CONFIG_ORIGEM.Revenda,
-    Usuario: CONFIG_ORIGEM.Usuario,
-    CodigoOrigem: CONFIG_ORIGEM.CodigoOrigem,
+    Empresa: CONFIG_ORIGEM_ATENDIMENTO.Empresa,
+    Revenda: CONFIG_ORIGEM_ATENDIMENTO.Revenda,
+    Usuario: CONFIG_ORIGEM_ATENDIMENTO.Usuario,
+    CodigoOrigem: CONFIG_ORIGEM_ATENDIMENTO.CodigoOrigem,
     IdentificadorOrigem: `TRAY-${orderId}`,
     ClienteContactado: true,
     NroSolicitacao: 0,
   };
 
-  const response = await axios.post<LinxInserirContatoResponse>(
+  const response = await axios.post<number>(
     `${LINX_ENDPOINT}/Pecas/AtendimentoBalcao/Atendimento/InserirContato`,
     body,
     { headers: LINX_HEADERS }
   );
 
-  const data = response.data as Record<string, unknown>;
-  const contatoId = data['Contato'] ?? data['NumeroContato'] ?? data['Id'];
-
-  if (!contatoId) {
-    throw new Error('InserirContato não retornou um ID de atendimento válido');
+  // API retorna número inteiro direto (ex: 60833), não JSON
+  const contatoId = Number(response.data);
+  if (!contatoId || isNaN(contatoId)) {
+    throw new Error(`InserirContato não retornou ID válido. Response: ${JSON.stringify(response.data)}`);
   }
 
-  return Number(contatoId);
+  return contatoId;
 }
 
-// ─── Passo 3: Insere um item no atendimento ───────────────────────────────────
+// ─── Passo 3: Inserir item no atendimento ─────────────────────────────────────
 async function inserirItem(
   contatoId: number,
-  item: { ItemEstoque: number; Quantidade: number; ValorUnitario: number; Desconto: number }
-): Promise<LinxInserirItemResponse> {
+  codigoEstoque: number,
+  quantidade: number
+): Promise<void> {
   const body = {
     dadosDoItem: {
-      ItemEstoque: item.ItemEstoque,
-      Quantidade: item.Quantidade,
-      ValorUnitario: item.ValorUnitario,
-      Desconto: item.Desconto,
+      ItemEstoque: codigoEstoque,
+      Quantidade: quantidade,
+      ValorUnitario: 0,
+      Desconto: 0,
       DescontoLinxPromo: 0,
       DescontoUnitarioLinxPromo: 0,
       ContadorItem: 0,
@@ -227,10 +167,10 @@ async function inserirItem(
       Gratuidade: 0,
     },
     dadosOrigem: {
-      configuracaoOrigem: CONFIG_ORIGEM,
+      configuracaoOrigem: CONFIG_ORIGEM_ATENDIMENTO,
       parametrosSelecao: {
-        Empresa: CONFIG_ORIGEM.Empresa,
-        Revenda: CONFIG_ORIGEM.Revenda,
+        Empresa: CONFIG_ORIGEM_ATENDIMENTO.Empresa,
+        Revenda: CONFIG_ORIGEM_ATENDIMENTO.Revenda,
         Contato: contatoId,
         Solicitacao: 0,
         OrdemServico: 0,
@@ -250,7 +190,7 @@ async function inserirItem(
       descontoPercentual: 0,
       descontoPercentualLinxPromo: 0,
       descontoPercentualTotal: 0,
-      valorTotal: item.ValorUnitario * item.Quantidade,
+      valorTotal: 0,
       rentabilidadePercentual: 0,
       custoUnitario: 0,
       impostos: {
@@ -274,44 +214,20 @@ async function inserirItem(
     contato: contatoId,
     PoliticaDePreco: 0,
     QuantidadeInteira: true,
-    ValorUnitarioInicial: item.ValorUnitario,
+    ValorUnitarioInicial: 0,
     Mecanico: 0,
+    ObterValorUnitario: true,
   };
 
-  const response = await axios.post<LinxInserirItemResponse>(
+  // Query params obrigatórios — sem eles retorna 412
+  await axios.post(
     `${LINX_ENDPOINT}/Pecas/AtendimentoBalcao/Atendimento/InserirItem`,
     body,
-    { headers: LINX_HEADERS }
+    {
+      headers: LINX_HEADERS,
+      params: { tipoVenda: 'V', editadoNaSelPecaPai: 'false' },
+    }
   );
-
-  return response.data;
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function extrairDocumento(customer: TrayCustomer | undefined): string {
-  if (!customer) return '';
-  return customer.cpf ?? customer.cnpj ?? '';
-}
-
-function mapTrayItemsToLinx(
-  productsSold: TrayOrderItem[] | undefined
-): Array<{ ItemEstoque: number; Quantidade: number; ValorUnitario: number; Desconto: number }> {
-  if (!productsSold?.length) return [];
-
-  return productsSold
-    .map((entry) => {
-      const item = entry.ProductsSold ?? entry;
-      const itemEstoque = parseInt(String(item.reference ?? item.id ?? 0));
-      if (!itemEstoque) return null;
-      return {
-        ItemEstoque: itemEstoque,
-        Quantidade: parseFloat(String(item.quantity ?? 1)),
-        ValorUnitario: parseFloat(String(item.price ?? 0)),
-        Desconto: parseFloat(String(item.discount ?? 0)),
-      };
-    })
-    .filter((item): item is NonNullable<typeof item> => item !== null);
 }
 
 // ─── Orquestrador principal ───────────────────────────────────────────────────
@@ -323,54 +239,75 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
   log.info('Iniciando envio para Linx AutoShop');
 
   const customer = order?.Customer;
-
-  // Passo 1 — buscar cliente, cadastrar se não existir
   const documento = extrairDocumento(customer);
-  let codigoCliente = 0;
 
-  if (documento) {
-    const masked = documento.slice(0, -3).replace(/\d/g, '*') + documento.slice(-3);
-    log.info({ doc: masked }, 'Buscando cliente na Linx');
-    try {
-      const clienteLinx = await buscarClienteLinx(documento);
-      if (clienteLinx) {
-        codigoCliente = clienteLinx.Codigo ?? clienteLinx.CodigoCliente ?? 0;
-        log.info({ codigoCliente }, 'Cliente encontrado na Linx');
-      } else if (customer) {
-        log.info('Cliente não encontrado — cadastrando na Linx');
-        codigoCliente = await cadastrarClienteSimplificado(customer);
-        log.info({ codigoCliente }, 'Cliente cadastrado na Linx');
-      } else {
-        log.warn('Cliente não encontrado e sem dados para cadastrar');
-      }
-    } catch (err: unknown) {
-      log.warn({ err: err instanceof Error ? err.message : String(err) }, 'Erro ao buscar/criar cliente — continuando sem vínculo');
-    }
-  } else {
-    log.warn('Pedido sem CPF/CNPJ no payload Tray');
+  if (!documento) {
+    throw new Error('Pedido sem CPF/CNPJ — não é possível criar cliente na Linx');
   }
 
-  // Passo 2 — criar atendimento
+  // Passo 1 — cadastrar cliente
+  const masked = documento.slice(0, -3).replace(/\d/g, '*') + documento.slice(-3);
+  log.info({ doc: masked }, 'Cadastrando cliente na Linx');
+
+  let codigoCliente: number;
+  try {
+    codigoCliente = await cadastrarCliente(customer!);
+    log.info({ codigoCliente }, 'Cliente cadastrado na Linx');
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // Duplicata de CPF: a Linx retorna erro mas o cliente existe — relançar para retry
+    throw new Error(`Erro ao cadastrar cliente: ${msg}`);
+  }
+
+  // Passo 2 — abrir atendimento
   const contatoId = await inserirContato(codigoCliente, orderId);
-  log.info({ contatoId }, 'Atendimento criado na Linx');
+  log.info({ contatoId }, 'Atendimento aberto na Linx');
 
   // Passo 3 — inserir itens
-  const itens = mapTrayItemsToLinx(order?.ProductsSold);
-  log.info({ count: itens.length }, 'Inserindo itens no atendimento');
+  const produtos = order?.ProductsSold ?? [];
+  log.info({ count: produtos.length }, 'Inserindo itens no atendimento');
 
-  for (const item of itens) {
+  let itensInseridos = 0;
+  let itensFalhados = 0;
+
+  for (const wrapper of produtos) {
+    const item = wrapper.ProductsSold;
+    const reference = item?.reference;
+    const quantidade = parseFloat(item?.quantity ?? '1');
+
+    if (!reference) {
+      log.warn('Item sem reference — ignorado');
+      itensFalhados++;
+      continue;
+    }
+
+    // Busca CodigoEstoque numérico via ConsultaPecaGerencial
+    log.debug({ reference }, 'Buscando CodigoEstoque na Linx');
+    const codigoEstoque = await buscarCodigoEstoque(reference);
+
+    if (!codigoEstoque) {
+      log.warn({ reference }, 'CodigoEstoque não encontrado na Linx — item ignorado');
+      itensFalhados++;
+      continue;
+    }
+
     try {
-      await inserirItem(contatoId, item);
-      log.info({ itemEstoque: item.ItemEstoque, qtd: item.Quantidade }, 'Item inserido');
+      await inserirItem(contatoId, codigoEstoque, quantidade);
+      log.info({ reference, codigoEstoque, quantidade }, 'Item inserido com sucesso');
+      itensInseridos++;
     } catch (err: unknown) {
-      log.error(
-        { itemEstoque: item.ItemEstoque, err: err instanceof Error ? err.message : String(err) },
-        'Falha ao inserir item'
-      );
+      const msg = err instanceof Error ? err.message : String(err);
+      log.error({ reference, codigoEstoque, err: msg }, 'Falha ao inserir item');
+      itensFalhados++;
     }
   }
 
-  log.info({ contatoId }, 'Pedido enviado à Linx com sucesso');
+  log.info({ contatoId, itensInseridos, itensFalhados }, 'Pedido enviado à Linx');
 
-  return { pedidoOrigem: `TRAY-${orderId}`, raw: trayOrderData };
+  return {
+    pedidoOrigem: `TRAY-${orderId}`,
+    contatoId,
+    itensInseridos,
+    itensFalhados,
+  };
 }

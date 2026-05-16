@@ -46,6 +46,29 @@ const CONSULTA_BODY = {
   CodigoReferenciaFabrica: '',
 };
 
+export async function buscarCodigoEstoque(reference: string): Promise<number | null> {
+  try {
+    const body = {
+      ...CONSULTA_BODY,
+      CodigoItemParcial: reference,
+      SomenteDisponiveis: false,
+    };
+
+    const response = await axios.post<LinxStockApiItem[]>(
+      `${env.LINX_API_URL}/api-e-commerce-premium/ConsultaPecaGerencial`,
+      body,
+      { headers: LINX_HEADERS }
+    );
+
+    const item = response.data?.[0];
+    return item?.CodigoEstoque ?? null;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error({ reference, err: msg }, 'Erro ao buscar CodigoEstoque na Linx');
+    return null;
+  }
+}
+
 export async function fetchStockFromLinx(): Promise<NormalizedStockItem[]> {
   try {
     const response = await axios.post<LinxStockApiItem[]>(
