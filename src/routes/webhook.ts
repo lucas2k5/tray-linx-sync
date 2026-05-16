@@ -19,8 +19,9 @@ webhookRoutes.post('/orders', async (c) => {
 
   const parsed = webhookPayloadSchema.safeParse(body);
 
-  if (!parsed.success || parsed.data.scope_name !== 'order') {
-    logger.warn({ body }, 'Webhook ignorado: não é pedido ou payload inválido');
+  const ORDER_SCOPES = ['order', 'order_status', 'order_changed', 'order_new'];
+  if (!parsed.success || !ORDER_SCOPES.includes(parsed.data.scope_name)) {
+    logger.warn({ scope_name: parsed.success ? parsed.data.scope_name : undefined, body }, 'Webhook ignorado: scope_name não é de pedido');
     return c.json({ ok: true, message: 'Ignorado' });
   }
 
