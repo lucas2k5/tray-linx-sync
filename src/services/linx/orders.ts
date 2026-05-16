@@ -157,13 +157,14 @@ async function inserirContato(codigoCliente: number, orderId: string): Promise<n
 async function inserirItem(
   contatoId: number,
   codigoEstoque: number,
-  quantidade: number
+  quantidade: number,
+  valorUnitario: number
 ): Promise<void> {
   const body = {
     dadosDoItem: {
       ItemEstoque: codigoEstoque,
       Quantidade: quantidade,
-      ValorUnitario: 0,
+      ValorUnitario: valorUnitario,
       Desconto: 0,
       DescontoLinxPromo: 0,
       DescontoUnitarioLinxPromo: 0,
@@ -227,9 +228,9 @@ async function inserirItem(
     contato: contatoId,
     PoliticaDePreco: 0,
     QuantidadeInteira: true,
-    ValorUnitarioInicial: 0,
+    ValorUnitarioInicial: valorUnitario,
     Mecanico: 0,
-    ObterValorUnitario: true,
+    ObterValorUnitario: false,
   };
 
   // Query params obrigatórios — sem eles retorna 412
@@ -287,6 +288,7 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
     const item = wrapper.ProductsSold;
     const reference = item?.reference;
     const quantidade = parseFloat(item?.quantity ?? '1');
+    const valorUnitario = parseFloat(item?.price ?? '0');
 
     if (!reference) {
       log.warn('Item sem reference — ignorado');
@@ -307,8 +309,8 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
     }
 
     try {
-      await inserirItem(contatoId, codigoEstoque, quantidade);
-      log.info({ reference, codigoEstoque, quantidade }, 'Item inserido com sucesso');
+      await inserirItem(contatoId, codigoEstoque, quantidade, valorUnitario);
+      log.info({ reference, codigoEstoque, quantidade, valorUnitario }, 'Item inserido com sucesso');
       itensInseridos++;
       itens.push({ reference, codigoEstoque, quantidade, status: 'inserido' });
     } catch (err: unknown) {
