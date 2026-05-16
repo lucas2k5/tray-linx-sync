@@ -281,6 +281,7 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
 
   let itensInseridos = 0;
   let itensFalhados = 0;
+  const itens: import('../../types/linx.js').LinxItemDetalhe[] = [];
 
   for (const wrapper of produtos) {
     const item = wrapper.ProductsSold;
@@ -290,6 +291,7 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
     if (!reference) {
       log.warn('Item sem reference — ignorado');
       itensFalhados++;
+      itens.push({ reference: '(sem reference)', codigoEstoque: null, quantidade, status: 'sem_reference' });
       continue;
     }
 
@@ -300,6 +302,7 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
     if (!codigoEstoque) {
       log.warn({ reference }, 'CodigoEstoque não encontrado na Linx — item ignorado');
       itensFalhados++;
+      itens.push({ reference, codigoEstoque: null, quantidade, status: 'sem_codigo' });
       continue;
     }
 
@@ -307,10 +310,12 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
       await inserirItem(contatoId, codigoEstoque, quantidade);
       log.info({ reference, codigoEstoque, quantidade }, 'Item inserido com sucesso');
       itensInseridos++;
+      itens.push({ reference, codigoEstoque, quantidade, status: 'inserido' });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = err instanceof Error ? err.message : axiosErrorDetail(err);
       log.error({ reference, codigoEstoque, err: msg }, 'Falha ao inserir item');
       itensFalhados++;
+      itens.push({ reference, codigoEstoque, quantidade, status: 'falhou', erro: msg });
     }
   }
 
@@ -318,8 +323,12 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
 
   return {
     pedidoOrigem: `TRAY-${orderId}`,
+    codigoCliente,
+    clienteNome: customer?.name ?? '',
+    clienteDocumento: masked,
     contatoId,
     itensInseridos,
     itensFalhados,
+    itens,
   };
 }

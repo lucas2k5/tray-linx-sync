@@ -28,11 +28,23 @@ export type LinxInserirContatoResponse = number;
 // InserirItem retorna string (ex: "Item alterado com sucesso!")
 export type LinxInserirItemResponse = string;
 
+export interface LinxItemDetalhe {
+  reference: string;
+  codigoEstoque: number | null;
+  quantidade: number;
+  status: 'inserido' | 'falhou' | 'sem_codigo' | 'sem_reference';
+  erro?: string;
+}
+
 export interface LinxOrderPayload {
   pedidoOrigem: string;
+  codigoCliente: number;
+  clienteNome: string;
+  clienteDocumento: string;
   contatoId: number;
   itensInseridos: number;
   itensFalhados: number;
+  itens: LinxItemDetalhe[];
 }
 
 export interface NormalizedStockItem {
