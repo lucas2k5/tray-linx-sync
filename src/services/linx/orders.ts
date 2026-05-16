@@ -31,6 +31,14 @@ const CONFIG_ORIGEM_ATENDIMENTO = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+function axiosErrorDetail(err: unknown): string {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const res = (err as { response?: { data?: unknown; status?: number } }).response;
+    return `HTTP ${res?.status} — ${JSON.stringify(res?.data)}`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
 function parseDDD(phone: string | undefined): number {
   const digits = (phone ?? '').replace(/\D/g, '');
   return digits.length >= 2 ? parseInt(digits.substring(0, 2)) : 0;
@@ -125,11 +133,16 @@ async function inserirContato(codigoCliente: number, orderId: string): Promise<n
     NroSolicitacao: 0,
   };
 
-  const response = await axios.post<number>(
-    `${LINX_ENDPOINT}/Pecas/AtendimentoBalcao/Atendimento/InserirContato`,
-    body,
-    { headers: LINX_HEADERS }
-  );
+  let response: Awaited<ReturnType<typeof axios.post<number>>>;
+  try {
+    response = await axios.post<number>(
+      `${LINX_ENDPOINT}/Pecas/AtendimentoBalcao/Atendimento/InserirContato`,
+      body,
+      { headers: LINX_HEADERS }
+    );
+  } catch (err: unknown) {
+    throw new Error(`InserirContato falhou: ${axiosErrorDetail(err)}`);
+  }
 
   // API retorna número inteiro direto (ex: 60833), não JSON
   const contatoId = Number(response.data);
@@ -254,9 +267,8 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
     codigoCliente = await cadastrarCliente(customer!);
     log.info({ codigoCliente }, 'Cliente cadastrado na Linx');
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
     // Duplicata de CPF: a Linx retorna erro mas o cliente existe — relançar para retry
-    throw new Error(`Erro ao cadastrar cliente: ${msg}`);
+    throw new Error(`Erro ao cadastrar cliente: ${axiosErrorDetail(err)}`);
   }
 
   // Passo 2 — abrir atendimento
