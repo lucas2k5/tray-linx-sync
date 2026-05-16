@@ -59,20 +59,26 @@ function extrairDocumento(customer: TrayCustomer | undefined): string {
 
 // ─── Busca cliente existente por CPF/CNPJ ────────────────────────────────────
 async function buscarClientePorDocumento(cpfCnpj: string): Promise<number | null> {
-  const response = await axios.post<LinxClienteResponse>(
-    `${LINX_ENDPOINT}/Geral/ConsultaClientes/ConsultaClientesPaginado`,
-    {
-      Empresa: 1,
-      Revenda: 1,
-      CpfCnpj: cpfCnpj,
-      Nome: '',
-      PaginaAtual: 1,
-      QuantidadeRegistrosPorPagina: 1,
-    },
-    { headers: LINX_HEADERS }
-  );
-  const codigo = response.data?.Clientes?.[0]?.Codigo ?? response.data?.Clientes?.[0]?.CodigoCliente;
-  return codigo ?? null;
+  try {
+    const response = await axios.post<LinxClienteResponse>(
+      `${LINX_ENDPOINT}/Geral/ConsultaClientes/ConsultaClientesPaginado`,
+      {
+        Empresa: 1,
+        Revenda: 1,
+        Usuario: 0,
+        ValidaRg: false,
+        TipoCliente: 0,
+        CnpjCPF: cpfCnpj,
+        Nome: '',
+        ConsultaLGPD: false,
+      },
+      { headers: LINX_HEADERS }
+    );
+    const codigo = response.data?.Clientes?.[0]?.Codigo ?? response.data?.Clientes?.[0]?.CodigoCliente;
+    return codigo ?? null;
+  } catch (err: unknown) {
+    throw new Error(`Erro ao buscar cliente existente: ${axiosErrorDetail(err)}`);
+  }
 }
 
 // ─── Passo 1: Cadastrar cliente ───────────────────────────────────────────────
