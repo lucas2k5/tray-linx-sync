@@ -4,6 +4,7 @@ import { logger } from '../../lib/logger.js';
 import { buscarCodigoEstoque } from './stock.js';
 import type {
   LinxCadastrarClienteResponse,
+  LinxClienteResponse,
   LinxOrderPayload,
 } from '../../types/linx.js';
 import type { TrayOrderComplete, TrayCustomer } from '../../types/tray.js';
@@ -54,6 +55,24 @@ function extrairDocumento(customer: TrayCustomer | undefined): string {
   const cpf = (customer.cpf ?? '').replace(/\D/g, '');
   const cnpj = (customer.cnpj ?? '').replace(/\D/g, '');
   return cpf || cnpj;
+}
+
+// ─── Busca cliente existente por CPF/CNPJ ────────────────────────────────────
+async function buscarClientePorDocumento(cpfCnpj: string): Promise<number | null> {
+  const response = await axios.post<LinxClienteResponse>(
+    `${LINX_ENDPOINT}/Geral/ConsultaClientes/ConsultaClientesPaginado`,
+    {
+      Empresa: 1,
+      Revenda: 1,
+      CpfCnpj: cpfCnpj,
+      Nome: '',
+      PaginaAtual: 1,
+      QuantidadeRegistrosPorPagina: 1,
+    },
+    { headers: LINX_HEADERS }
+  );
+  const codigo = response.data?.Clientes?.[0]?.Codigo ?? response.data?.Clientes?.[0]?.CodigoCliente;
+  return codigo ?? null;
 }
 
 // ─── Passo 1: Cadastrar cliente ───────────────────────────────────────────────
@@ -268,8 +287,19 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
     codigoCliente = await cadastrarCliente(customer!);
     log.info({ codigoCliente }, 'Cliente cadastrado na Linx');
   } catch (err: unknown) {
-    // Duplicata de CPF: a Linx retorna erro mas o cliente existe — relançar para retry
-    throw new Error(`Erro ao cadastrar cliente: ${axiosErrorDetail(err)}`);
+    const detail = axiosErrorDetail(err);
+    // Linx retorna 500 quando CPF/CNPJ já existe — busca o cliente existente
+    if (detail.includes('já cadastrado')) {
+      log.info({ doc: masked }, 'CPF/CNPJ já existe na Linx — buscando cliente existente');
+      const encontrado = await buscarClientePorDocumento(documento);
+      if (!encontrado) {
+        throw new Error(`CPF/CNPJ já cadastrado mas não encontrado na busca. Detalhe: ${detail}`);
+      }
+      codigoCliente = encontrado;
+      log.info({ codigoCliente }, 'Cliente existente encontrado na Linx');
+    } else {
+      throw new Error(`Erro ao cadastrar cliente: ${detail}`);
+    }
   }
 
   // Passo 2 — abrir atendimento
