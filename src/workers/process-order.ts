@@ -74,13 +74,22 @@ async function processOrder(order: Record<string, unknown>): Promise<void> {
     const trayStatus = String(orderNode?.status ?? '').toUpperCase();
     const customerName = (orderNode?.Customer as Record<string, unknown> | undefined)?.name as string | undefined;
     const qtdItens = Array.isArray(orderNode?.ProductsSold) ? orderNode.ProductsSold.length : 0;
+    const rawTotal = orderNode?.total;
+    const orderValue = rawTotal != null ? (parseFloat(String(rawTotal)) || 0) : null;
+    const paymentMethod = String(orderNode?.payment_method ?? '') || null;
 
     steps.push(step('tray_fetch', true, { trayStatus, customerName, qtdItens }));
     log.info({ trayStatus, customerName, qtdItens }, 'Pedido completo obtido da Tray');
 
     await supabase
       .from('order_queue')
-      .update({ tray_order_data: trayOrderData as unknown as Record<string, unknown> })
+      .update({
+        tray_order_data: trayOrderData as unknown as Record<string, unknown>,
+        customer_name: customerName ?? null,
+        order_value: orderValue,
+        items_count: qtdItens,
+        payment_method: paymentMethod,
+      })
       .eq('scope_id', scopeId);
 
     // Step 3 — filtro de status

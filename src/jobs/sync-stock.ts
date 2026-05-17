@@ -88,15 +88,19 @@ export async function syncStock(): Promise<void> {
     logger.info({ updated, notFound, skipped, errors, durationMs }, 'Sincronização concluída');
 
     // Salva log no Supabase
-    await supabase.from('sync_logs').insert({
+    const { error: logError } = await supabase.from('sync_logs').insert({
       sync_type: 'stock',
       status: errors === 0 ? 'success' : 'partial',
       total_items: summary.length,
       success_count: updated,
       error_count: errors,
+      not_found_count: notFound,
+      skipped_count: skipped,
       duration_ms: durationMs,
+      started_at: new Date(startedAt).toISOString(),
       details: summary as unknown as Record<string, unknown>[],
     });
+    if (logError) logger.error({ err: logError.message }, 'Falha ao salvar sync_log');
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error({ err: msg }, 'Erro geral na sincronização de estoque');
@@ -107,7 +111,10 @@ export async function syncStock(): Promise<void> {
       total_items: 0,
       success_count: 0,
       error_count: 1,
+      not_found_count: 0,
+      skipped_count: 0,
       duration_ms: Date.now() - startedAt,
+      started_at: new Date(startedAt).toISOString(),
       details: { error: msg } as unknown as Record<string, unknown>[],
     });
   }
