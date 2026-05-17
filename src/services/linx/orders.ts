@@ -76,8 +76,9 @@ async function buscarClienteLinx(cpfCnpj: string): Promise<number | null> {
       },
       { headers: LINX_HEADERS }
     );
+    logger.info({ rawConsultaClientes: response.data }, 'Resposta ConsultaClientes Linx');
     const cliente = response.data?.[0]?.Cliente;
-    return cliente ?? null;
+    return cliente != null ? cliente : null;
   } catch (err: unknown) {
     throw new Error(`Erro ao buscar cliente na Linx: ${axiosErrorDetail(err)}`);
   }
@@ -300,7 +301,7 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
     if (detail.includes('já cadastrado')) {
       log.info({ doc: masked }, 'CPF/CNPJ já existe na Linx — buscando cliente existente');
       const encontrado = await buscarClienteLinx(documento);
-      if (!encontrado) {
+      if (encontrado == null) {
         throw new Error(`CPF/CNPJ já cadastrado mas não encontrado via ConsultaClientes. Detalhe: ${detail}`);
       }
       codigoCliente = encontrado;
