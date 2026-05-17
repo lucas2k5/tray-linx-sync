@@ -4,7 +4,7 @@ import { logger } from '../../lib/logger.js';
 import { buscarCodigoEstoque } from './stock.js';
 import type {
   LinxCadastrarClienteResponse,
-  LinxClienteResponse,
+  LinxConsultaClienteResult,
   LinxOrderPayload,
 } from '../../types/linx.js';
 import type { TrayOrderComplete, TrayCustomer } from '../../types/tray.js';
@@ -58,41 +58,28 @@ function extrairDocumento(customer: TrayCustomer | undefined): string {
 }
 
 // ─── Busca cliente existente por CPF/CNPJ ────────────────────────────────────
-async function buscarClientePorDocumento(cpfCnpj: string): Promise<number | null> {
+// Endpoint: ConsultaClientes (NÃO ConsultaClientesPaginado — tem bug com campos zerados)
+// Payload mínimo validado — não adicionar campos extras
+async function buscarClienteLinx(cpfCnpj: string): Promise<number | null> {
   try {
-    const response = await axios.post<LinxClienteResponse>(
-      `${LINX_ENDPOINT}/Geral/ConsultaClientes/ConsultaClientesPaginado`,
+    const response = await axios.post<LinxConsultaClienteResult[]>(
+      `${LINX_ENDPOINT}/Geral/ConsultaClientes/ConsultaClientes`,
       {
-        Empresa: 0,
-        Revenda: 0,
+        CgcOuCpf: cpfCnpj,
+        Empresa: 1,
+        Revenda: 1,
         Usuario: 0,
-        ValidaRg: false,
-        TipoCliente: 0,
-        CnpjCPF: cpfCnpj,
-        Nome: '',
-        Fantasia: '',
-        Cidade: '',
-        UF: '',
-        Cep: 0,
-        Ddd: 0,
-        Telefone: 0,
-        Categoria: '',
-        NascidoEntre: false,
-        NascidoEntreChecked: false,
-        NascidoInicial: '',
-        NascidoFinal: '',
-        TipoClassificacao: 0,
-        ConsultaLGPD: false,
+        CodigoOrigem: 0,
+        IdentificadorOrigem: '',
+        ClienteContactado: true,
+        NroSolicitacao: 0,
       },
       { headers: LINX_HEADERS }
     );
-    const codigo = response.data?.Clientes?.[0]?.Codigo ?? response.data?.Clientes?.[0]?.CodigoCliente;
-    return codigo ?? null;
+    const cliente = response.data?.[0]?.Cliente;
+    return cliente ?? null;
   } catch (err: unknown) {
-    // 404 = nenhum resultado encontrado — não é erro de rota
-    const detail = axiosErrorDetail(err);
-    if (detail.includes('404')) return null;
-    throw new Error(`Erro ao buscar cliente existente: ${detail}`);
+    throw new Error(`Erro ao buscar cliente na Linx: ${axiosErrorDetail(err)}`);
   }
 }
 
@@ -312,9 +299,9 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
     // Linx retorna 500 quando CPF/CNPJ já existe — busca o cliente existente
     if (detail.includes('já cadastrado')) {
       log.info({ doc: masked }, 'CPF/CNPJ já existe na Linx — buscando cliente existente');
-      const encontrado = await buscarClientePorDocumento(documento);
+      const encontrado = await buscarClienteLinx(documento);
       if (!encontrado) {
-        throw new Error(`CPF/CNPJ já cadastrado mas não encontrado na busca. Detalhe: ${detail}`);
+        throw new Error(`CPF/CNPJ já cadastrado mas não encontrado via ConsultaClientes. Detalhe: ${detail}`);
       }
       codigoCliente = encontrado;
       log.info({ codigoCliente }, 'Cliente existente encontrado na Linx');

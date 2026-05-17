@@ -18,6 +18,14 @@ export interface LinxClienteResponse {
   Clientes?: LinxClienteResult[];
 }
 
+export interface LinxConsultaClienteResult {
+  Cliente: number;
+  Nome?: string;
+  Cpf?: number;
+  Cgc?: string;
+  [key: string]: unknown;
+}
+
 export interface LinxCadastrarClienteResponse {
   Cliente: number;
 }
