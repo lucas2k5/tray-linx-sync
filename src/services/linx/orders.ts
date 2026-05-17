@@ -63,13 +63,25 @@ async function buscarClientePorDocumento(cpfCnpj: string): Promise<number | null
     const response = await axios.post<LinxClienteResponse>(
       `${LINX_ENDPOINT}/Geral/ConsultaClientes/ConsultaClientesPaginado`,
       {
-        Empresa: 1,
-        Revenda: 1,
+        Empresa: 0,
+        Revenda: 0,
         Usuario: 0,
         ValidaRg: false,
         TipoCliente: 0,
         CnpjCPF: cpfCnpj,
         Nome: '',
+        Fantasia: '',
+        Cidade: '',
+        UF: '',
+        Cep: 0,
+        Ddd: 0,
+        Telefone: 0,
+        Categoria: '',
+        NascidoEntre: false,
+        NascidoEntreChecked: false,
+        NascidoInicial: '',
+        NascidoFinal: '',
+        TipoClassificacao: 0,
         ConsultaLGPD: false,
       },
       { headers: LINX_HEADERS }
@@ -77,7 +89,10 @@ async function buscarClientePorDocumento(cpfCnpj: string): Promise<number | null
     const codigo = response.data?.Clientes?.[0]?.Codigo ?? response.data?.Clientes?.[0]?.CodigoCliente;
     return codigo ?? null;
   } catch (err: unknown) {
-    throw new Error(`Erro ao buscar cliente existente: ${axiosErrorDetail(err)}`);
+    // 404 = nenhum resultado encontrado — não é erro de rota
+    const detail = axiosErrorDetail(err);
+    if (detail.includes('404')) return null;
+    throw new Error(`Erro ao buscar cliente existente: ${detail}`);
   }
 }
 
