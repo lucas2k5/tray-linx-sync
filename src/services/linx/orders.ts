@@ -96,10 +96,10 @@ async function cadastrarCliente(customer: TrayCustomer): Promise<number> {
     .join(', ')
     .substring(0, 70);
 
-  const body = {
+  const buildBody = (cepValue: number) => ({
     ObrigaCPFCNPJ: true,
     CPFCNPJ: cpfCnpj,
-    CEP: cep,
+    CEP: cepValue,
     Cidade: (customer.city ?? '').substring(0, 50),
     UF: (customer.state ?? '').substring(0, 2),
     Nome: (customer.name ?? '').substring(0, 70),
@@ -124,13 +124,28 @@ async function cadastrarCliente(customer: TrayCustomer): Promise<number> {
     EnderecoCobranca: 1,
     CadastraCepAutomaticamente: false,
     NaoValidarCepCadastroAutomatico: true,
-  };
+  });
 
-  const response = await axios.post<LinxCadastrarClienteResponse>(
-    `${LINX_ENDPOINT}/Geral/ManutencaoClienteSimplificado/CadastrarClienteSimplificado`,
-    body,
-    { headers: LINX_HEADERS }
-  );
+  const post = (cepValue: number) =>
+    axios.post<LinxCadastrarClienteResponse>(
+      `${LINX_ENDPOINT}/Geral/ManutencaoClienteSimplificado/CadastrarClienteSimplificado`,
+      buildBody(cepValue),
+      { headers: LINX_HEADERS }
+    );
+
+  let response: Awaited<ReturnType<typeof post>>;
+  try {
+    response = await post(cep);
+  } catch (err: unknown) {
+    const detail = axiosErrorDetail(err);
+    // CEP não cadastrado na base Linx (ex: cidades pequenas/rurais) — tenta com CEP=0
+    if (detail.includes('não está cadastrado')) {
+      logger.warn({ cep }, 'CEP não cadastrado na Linx — retentando com CEP=0');
+      response = await post(0);
+    } else {
+      throw err;
+    }
+  }
 
   const codigoCliente = response.data?.Cliente;
   if (!codigoCliente) {
