@@ -122,7 +122,7 @@ async function cadastrarCliente(customer: TrayCustomer): Promise<number> {
     ValidarCamposObrigatorios: false,
     Clifor: 'C',
     EnderecoCobranca: 1,
-    CadastraCepAutomaticamente: true,
+    CadastraCepAutomaticamente: false,
     NaoValidarCepCadastroAutomatico: true,
   };
 
@@ -298,7 +298,7 @@ export async function sendOrderToLinx(trayOrderData: TrayOrderComplete): Promise
   } catch (err: unknown) {
     const detail = axiosErrorDetail(err);
     // Linx retorna 500 quando CPF/CNPJ já existe — busca o cliente existente
-    if (detail.includes('já cadastrado')) {
+    if (detail.includes('CPF/CNPJ já cadastrado')) {
       log.info({ doc: masked }, 'CPF/CNPJ já existe na Linx — buscando cliente existente');
       const encontrado = await buscarClienteLinx(documento);
       if (encontrado == null) {
