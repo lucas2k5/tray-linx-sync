@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { env } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
 import { supabase } from '../lib/supabase.js';
+import { syncStock } from '../jobs/sync-stock.js';
 
 export const adminRoutes = new Hono();
 
@@ -62,6 +63,26 @@ adminRoutes.post('/reprocess/:scopeId', async (c) => {
 
   logger.info({ scopeId, previousStatus: existing.status }, 'Pedido reenfileirado manualmente');
   return c.json({ ok: true, scopeId, previousStatus: existing.status });
+});
+
+// POST /admin/trigger-stock-sync — dispara sync de estoque imediatamente e retorna resultado
+adminRoutes.post('/trigger-stock-sync', async (c) => {
+  logger.info('Sync de estoque disparado manualmente via admin');
+  try {
+    await syncStock();
+    const { data } = await supabase
+      .from('sync_logs')
+      .select('status, total_items, success_count, not_found_count, error_count, duration_ms, started_at')
+      .eq('sync_type', 'stock')
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .single();
+    return c.json({ ok: true, result: data ?? null });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error({ err: msg }, 'Erro ao disparar sync de estoque manualmente');
+    return c.json({ ok: false, error: msg }, 500);
+  }
 });
 
 // POST /admin/reprocess-failed — reprocessa todos os pedidos com status "failed"
